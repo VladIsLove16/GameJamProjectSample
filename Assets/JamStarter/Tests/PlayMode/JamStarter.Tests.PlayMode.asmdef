@@ -1,0 +1,19 @@
+{
+  "name": "JamStarter.Tests.PlayMode",
+  "rootNamespace": "JamStarter.Tests",
+  "references": [
+    "JamStarter.Runtime"
+  ],
+  "includePlatforms": [],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": false,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false,
+  "optionalUnityReferences": [
+    "TestAssemblies"
+  ]
+}

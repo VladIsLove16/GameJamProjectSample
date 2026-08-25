@@ -1,0 +1,22 @@
+{
+  "name": "JamStarter.Editor",
+  "rootNamespace": "JamStarter.Editor",
+  "references": [
+    "JamStarter.Runtime",
+    "Unity.InputSystem",
+    "Unity.InputSystem.Editor",
+    "UnityEngine.UI",
+    "Unity.TextMeshPro"
+  ],
+  "includePlatforms": [
+    "Editor"
+  ],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": true,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false
+}

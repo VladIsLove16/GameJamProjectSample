@@ -1,0 +1,15 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ad2f5ca46d1d66d448734a411810a1ce, type: 3}
+  m_Name: JamInputConfiguration
+  m_EditorClassIdentifier: JamStarter.Runtime::JamStarter.InputConfiguration
+  assetAnchor: {fileID: 11400000, guid: d9fcc94493bc31d4b9a8e60a77e14827, type: 2}
