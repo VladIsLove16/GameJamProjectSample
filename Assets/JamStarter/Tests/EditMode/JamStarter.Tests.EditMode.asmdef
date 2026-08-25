@@ -2,7 +2,8 @@
   "name": "JamStarter.Tests.EditMode",
   "rootNamespace": "JamStarter.Tests",
   "references": [
-    "JamStarter.Runtime"
+    "JamStarter.Runtime",
+    "Zenject"
   ],
   "includePlatforms": [
     "Editor"

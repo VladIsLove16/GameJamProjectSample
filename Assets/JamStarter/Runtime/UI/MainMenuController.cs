@@ -1,15 +1,18 @@
 using UnityEngine;
+using Zenject;
 
 namespace JamStarter
 {
     [DisallowMultipleComponent]
-    public sealed class MainMenuController : MonoBehaviour, IAppServicesConsumer
+    public sealed class MainMenuController : MonoBehaviour
     {
         [SerializeField] private UIScreen mainScreen;
         [SerializeField] private UIScreen settingsScreen;
         [SerializeField] private SettingsPanel settingsPanel;
 
-        private AppServices services;
+        private InputReader input;
+        private GamePauseService pause;
+        private SceneLoader scenes;
 
         private void Start()
         {
@@ -17,16 +20,19 @@ namespace JamStarter
             mainScreen.Show();
         }
 
-        public void Initialize(AppServices value)
+        [Inject]
+        private void Construct(InputReader inputReader, GamePauseService pauseService, SceneLoader sceneLoader)
         {
-            services = value;
-            services.Pause.Resume();
-            services.Input.UseUI();
+            input = inputReader;
+            pause = pauseService;
+            scenes = sceneLoader;
+            pause.Resume();
+            input.UseUI();
         }
 
         public void StartGame()
         {
-            services?.Scenes.LoadScene(SceneNames.Sandbox);
+            scenes?.LoadScene(SceneNames.Sandbox);
         }
 
         public void OpenSettings()

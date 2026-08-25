@@ -1,10 +1,11 @@
 using TMPro;
 using UnityEngine;
+using Zenject;
 
 namespace JamStarter
 {
     [DisallowMultipleComponent]
-    public sealed class SandboxController : MonoBehaviour, IAppServicesConsumer
+    public sealed class SandboxController : MonoBehaviour
     {
         private enum OverlayState
         {
@@ -21,22 +22,27 @@ namespace JamStarter
         [SerializeField] private SettingsPanel settingsPanel;
         [SerializeField] private TMP_Text resultMessage;
 
-        private AppServices services;
+        private InputReader input;
+        private GamePauseService pauseService;
+        private SceneLoader scenes;
         private OverlayState overlayState;
 
-        public void Initialize(AppServices value)
+        [Inject]
+        private void Construct(InputReader inputReader, GamePauseService pause, SceneLoader sceneLoader)
         {
-            if (services != null)
+            if (input != null)
             {
-                services.Input.PausePressed -= OnPauseRequested;
-                services.Input.CancelPressed -= OnCancelRequested;
+                input.PausePressed -= OnPauseRequested;
+                input.CancelPressed -= OnCancelRequested;
             }
 
-            services = value;
-            services.Input.PausePressed += OnPauseRequested;
-            services.Input.CancelPressed += OnCancelRequested;
-            services.Pause.Resume();
-            services.Input.UseGameplay();
+            input = inputReader;
+            pauseService = pause;
+            scenes = sceneLoader;
+            input.PausePressed += OnPauseRequested;
+            input.CancelPressed += OnCancelRequested;
+            pauseService.Resume();
+            input.UseGameplay();
 
             pauseScreen.Hide();
             settingsScreen.Hide();
@@ -59,20 +65,20 @@ namespace JamStarter
 
         public void Pause()
         {
-            if (services == null || overlayState != OverlayState.None)
+            if (input == null || overlayState != OverlayState.None)
             {
                 return;
             }
 
-            services.Pause.Pause();
-            services.Input.UseUI();
+            pauseService.Pause();
+            input.UseUI();
             pauseScreen.Show();
             overlayState = OverlayState.Pause;
         }
 
         public void Resume()
         {
-            if (services == null || overlayState == OverlayState.Result)
+            if (input == null || overlayState == OverlayState.Result)
             {
                 return;
             }
@@ -80,8 +86,8 @@ namespace JamStarter
             settingsPanel.Commit();
             settingsScreen.Hide();
             pauseScreen.Hide();
-            services.Pause.Resume();
-            services.Input.UseGameplay();
+            pauseService.Resume();
+            input.UseGameplay();
             overlayState = OverlayState.None;
         }
 
@@ -112,13 +118,13 @@ namespace JamStarter
 
         public void CompleteSandboxFlow()
         {
-            if (services == null)
+            if (input == null)
             {
                 return;
             }
 
-            services.Pause.Pause();
-            services.Input.UseUI();
+            pauseService.Pause();
+            input.UseUI();
             pauseScreen.Hide();
             settingsScreen.Hide();
             resultMessage.text = "Flow complete\nReplace Sandbox with your game scene";
@@ -129,13 +135,13 @@ namespace JamStarter
         public void Restart()
         {
             settingsPanel.Commit();
-            services?.Scenes.ReloadActiveScene();
+            scenes?.ReloadActiveScene();
         }
 
         public void ReturnToMainMenu()
         {
             settingsPanel.Commit();
-            services?.Scenes.LoadScene(SceneNames.MainMenu);
+            scenes?.LoadScene(SceneNames.MainMenu);
         }
 
         private void OnPauseRequested()
@@ -157,14 +163,14 @@ namespace JamStarter
 
         private void OnDestroy()
         {
-            if (services == null)
+            if (input == null)
             {
                 return;
             }
 
-            services.Input.PausePressed -= OnPauseRequested;
-            services.Input.CancelPressed -= OnCancelRequested;
-            services.Pause.Resume();
+            input.PausePressed -= OnPauseRequested;
+            input.CancelPressed -= OnCancelRequested;
+            pauseService.Resume();
         }
     }
 }

@@ -2,7 +2,8 @@
   "name": "JamStarter.Tests.PlayMode",
   "rootNamespace": "JamStarter.Tests",
   "references": [
-    "JamStarter.Runtime"
+    "JamStarter.Runtime",
+    "Zenject"
   ],
   "includePlatforms": [],
   "excludePlatforms": [],

@@ -2,6 +2,7 @@
   "name": "JamStarter.Runtime",
   "rootNamespace": "JamStarter",
   "references": [
+    "Zenject",
     "Unity.InputSystem",
     "UnityEngine.UI",
     "Unity.TextMeshPro"

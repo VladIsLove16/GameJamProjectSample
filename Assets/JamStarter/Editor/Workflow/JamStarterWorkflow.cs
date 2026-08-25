@@ -9,6 +9,7 @@ using UnityEditor.Build.Reporting;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using Zenject;
 
 namespace JamStarter.Editor
 {
@@ -18,6 +19,7 @@ namespace JamStarter.Editor
         public const string BootstrapScene = Root + "/Scenes/Bootstrap.unity";
         public const string MainMenuScene = Root + "/Scenes/MainMenu.unity";
         public const string SandboxScene = Root + "/Scenes/Sandbox.unity";
+        public const string ProjectContextPrefab = Root + "/Resources/ProjectContext.prefab";
 
         public static readonly string[] BuildScenes =
         {
@@ -155,6 +157,7 @@ namespace JamStarter.Editor
             SceneSetup[] originalSetup = EditorSceneManager.GetSceneManagerSetup();
             try
             {
+                ValidateProjectContext(errors);
                 for (int index = 0; index < JamStarterPaths.BuildScenes.Length; index++)
                 {
                     Scene scene = EditorSceneManager.OpenScene(JamStarterPaths.BuildScenes[index], OpenSceneMode.Single);
@@ -181,6 +184,12 @@ namespace JamStarter.Editor
         {
             var errors = new List<string>();
 
+            GameObject projectContext = AssetDatabase.LoadAssetAtPath<GameObject>(JamStarterPaths.ProjectContextPrefab);
+            if (projectContext == null || projectContext.GetComponent<ProjectContext>() == null)
+            {
+                errors.Add($"Missing Zenject ProjectContext prefab: {JamStarterPaths.ProjectContextPrefab}.");
+            }
+
             for (int index = 0; index < JamStarterPaths.BuildScenes.Length; index++)
             {
                 string expectedPath = JamStarterPaths.BuildScenes[index];
@@ -205,14 +214,40 @@ namespace JamStarter.Editor
             GameObject[] roots = scene.GetRootGameObjects();
             for (int rootIndex = 0; rootIndex < roots.Length; rootIndex++)
             {
-                Transform[] transforms = roots[rootIndex].GetComponentsInChildren<Transform>(true);
+                ValidateHierarchy(scene.name, roots[rootIndex], errors);
+            }
+
+            bool hasSceneContext = false;
+            for (int rootIndex = 0; rootIndex < roots.Length && !hasSceneContext; rootIndex++)
+            {
+                hasSceneContext = roots[rootIndex].GetComponentInChildren<SceneContext>(true) != null;
+            }
+
+            if (!hasSceneContext)
+            {
+                errors.Add($"{scene.name} has no Zenject SceneContext.");
+            }
+        }
+
+        private static void ValidateProjectContext(List<string> errors)
+        {
+            GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(JamStarterPaths.ProjectContextPrefab);
+            if (prefab != null)
+            {
+                ValidateHierarchy("ProjectContext.prefab", prefab, errors);
+            }
+        }
+
+        private static void ValidateHierarchy(string ownerName, GameObject root, List<string> errors)
+        {
+                Transform[] transforms = root.GetComponentsInChildren<Transform>(true);
                 for (int transformIndex = 0; transformIndex < transforms.Length; transformIndex++)
                 {
                     GameObject gameObject = transforms[transformIndex].gameObject;
                     int missingScripts = GameObjectUtility.GetMonoBehavioursWithMissingScriptCount(gameObject);
                     if (missingScripts > 0)
                     {
-                        errors.Add($"{scene.name}/{GetHierarchyPath(gameObject)} has {missingScripts} missing script(s).");
+                        errors.Add($"{ownerName}/{GetHierarchyPath(gameObject)} has {missingScripts} missing script(s).");
                     }
 
                     MonoBehaviour[] behaviours = gameObject.GetComponents<MonoBehaviour>();
@@ -221,15 +256,14 @@ namespace JamStarter.Editor
                         MonoBehaviour behaviour = behaviours[behaviourIndex];
                         if (behaviour != null && behaviour.GetType().Assembly.GetName().Name == "JamStarter.Runtime")
                         {
-                            ValidateDirectObjectReferences(scene, behaviour, errors);
+                            ValidateDirectObjectReferences(ownerName, behaviour, errors);
                         }
                     }
                 }
-            }
         }
 
         private static void ValidateDirectObjectReferences(
-            Scene scene,
+            string ownerName,
             MonoBehaviour behaviour,
             List<string> errors)
         {
@@ -255,7 +289,7 @@ namespace JamStarter.Editor
                 if (property.objectReferenceValue == null)
                 {
                     errors.Add(
-                        $"{scene.name}/{GetHierarchyPath(behaviour.gameObject)}: " +
+                        $"{ownerName}/{GetHierarchyPath(behaviour.gameObject)}: " +
                         $"{behaviour.GetType().Name}.{property.name} is not assigned.");
                 }
             }

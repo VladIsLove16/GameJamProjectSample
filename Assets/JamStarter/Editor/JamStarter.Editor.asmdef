@@ -3,6 +3,7 @@
   "rootNamespace": "JamStarter.Editor",
   "references": [
     "JamStarter.Runtime",
+    "Zenject",
     "Unity.InputSystem",
     "Unity.InputSystem.Editor",
     "UnityEngine.UI",

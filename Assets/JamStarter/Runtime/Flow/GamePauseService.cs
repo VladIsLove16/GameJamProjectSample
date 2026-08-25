@@ -1,5 +1,5 @@
-using System;
 using UnityEngine;
+using Zenject;
 
 namespace JamStarter
 {
@@ -14,10 +14,16 @@ namespace JamStarter
 
         private float timeScaleBeforePause = DefaultTimeScale;
 
-        public event Action<bool> PauseChanged;
+        private SignalBus signalBus;
 
         public bool IsPaused { get; private set; }
         public float TimeScaleBeforePause => timeScaleBeforePause;
+
+        [Inject]
+        private void Construct(SignalBus events)
+        {
+            signalBus = events;
+        }
 
         /// <summary>Pauses scaled gameplay time. Returns false if already paused.</summary>
         public bool Pause()
@@ -30,7 +36,7 @@ namespace JamStarter
             timeScaleBeforePause = Time.timeScale;
             Time.timeScale = 0f;
             IsPaused = true;
-            PauseChanged?.Invoke(true);
+            signalBus?.Fire(new PauseChangedSignal(true));
             return true;
         }
 
@@ -56,9 +62,14 @@ namespace JamStarter
         /// </summary>
         public void ResetForSceneTransition()
         {
+            bool wasPaused = IsPaused;
             ResumeInternal(false);
             timeScaleBeforePause = DefaultTimeScale;
             Time.timeScale = DefaultTimeScale;
+            if (wasPaused)
+            {
+                signalBus?.Fire(new PauseChangedSignal(false));
+            }
         }
 
         private bool ResumeInternal(bool notify)
@@ -73,7 +84,7 @@ namespace JamStarter
 
             if (notify)
             {
-                PauseChanged?.Invoke(false);
+                signalBus?.Fire(new PauseChangedSignal(false));
             }
 
             return true;

@@ -1,6 +1,7 @@
 using System;
 using UnityEngine;
 using UnityEngine.Audio;
+using Zenject;
 
 namespace JamStarter
 {
@@ -24,11 +25,17 @@ namespace JamStarter
 
         private GameSettings current;
 
-        public event Action<GameSettingsSnapshot> Changed;
+        private SignalBus signalBus;
 
         public bool IsInitialized { get; private set; }
         public GameSettingsSnapshot Current => new(current ?? defaults);
         public string[] QualityNames => QualitySettings.names;
+
+        [Inject]
+        private void Construct(SignalBus events)
+        {
+            signalBus = events;
+        }
 
         private void Awake()
         {
@@ -50,7 +57,7 @@ namespace JamStarter
             current = LoadOrDefault();
             IsInitialized = true;
             ApplyAll();
-            Changed?.Invoke(Current);
+            PublishChanged();
         }
 
         public void SetMasterVolume(float value) => SetVolume(ref current.masterVolume, value, masterVolumeParameter);
@@ -70,7 +77,7 @@ namespace JamStarter
 #if !UNITY_WEBGL
             Screen.fullScreen = value;
 #endif
-            Changed?.Invoke(Current);
+            PublishChanged();
         }
 
         public void SetQualityLevel(int value)
@@ -84,7 +91,7 @@ namespace JamStarter
 
             current.qualityLevel = clamped;
             QualitySettings.SetQualityLevel(clamped, true);
-            Changed?.Invoke(Current);
+            PublishChanged();
         }
 
         public void Save()
@@ -101,7 +108,7 @@ namespace JamStarter
             current = Sanitize(defaults.Clone());
             ApplyAll();
             Save();
-            Changed?.Invoke(Current);
+            PublishChanged();
         }
 
         public void ClearSavedSettings()
@@ -113,7 +120,7 @@ namespace JamStarter
             if (IsInitialized)
             {
                 ApplyAll();
-                Changed?.Invoke(Current);
+                PublishChanged();
             }
         }
 
@@ -153,7 +160,7 @@ namespace JamStarter
 
             destination = clamped;
             ApplyMixerVolume(parameter, clamped);
-            Changed?.Invoke(Current);
+            PublishChanged();
         }
 
         private void ApplyAll()
@@ -167,6 +174,11 @@ namespace JamStarter
             Screen.fullScreen = current.fullscreen;
 #endif
             QualitySettings.SetQualityLevel(current.qualityLevel, true);
+        }
+
+        private void PublishChanged()
+        {
+            signalBus?.Fire(new SettingsChangedSignal(Current));
         }
 
         private void ApplyMixerVolume(string parameter, float linearVolume)

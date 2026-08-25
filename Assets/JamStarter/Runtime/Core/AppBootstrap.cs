@@ -1,16 +1,17 @@
 using System;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using Zenject;
 
 namespace JamStarter
 {
     /// <summary>
-    /// Persistent composition root. It owns application services and injects them
-    /// into scene components after each load, avoiding global service access.
+    /// ProjectContext installer for application-lifetime services and signals.
+    /// Scene objects are injected by their SceneContext; this class only describes
+    /// the object graph and contains no runtime lookup or global accessor.
     /// </summary>
-    [DefaultExecutionOrder(-1000)]
     [DisallowMultipleComponent]
-    public sealed class AppBootstrap : MonoBehaviour
+    public sealed class AppBootstrap : MonoInstaller
     {
         [Header("Persistent services")]
         [SerializeField] private InputReader input;
@@ -22,63 +23,19 @@ namespace JamStarter
         [Header("Startup")]
         [SerializeField] private string firstScene = SceneNames.MainMenu;
 
-        private static AppBootstrap activeInstance;
-
-        private AppServices services;
-
-        private void Awake()
+        public override void InstallBindings()
         {
-            if (activeInstance != null && activeInstance != this)
-            {
-                Debug.LogWarning("Duplicate application root detected. The duplicate will be destroyed.", this);
-                Destroy(gameObject);
-                return;
-            }
-
             ValidateReferences();
-            activeInstance = this;
-            DontDestroyOnLoad(gameObject);
-            services = new AppServices(input, pause, scenes, audioService, settings);
-            SceneManager.sceneLoaded += OnSceneLoaded;
-        }
+            SignalBusInstaller.Install(Container);
+            AppSignalInstaller.Install(Container);
 
-        private void Start()
-        {
-            settings.Initialize();
-            input.UseUI();
-            Inject(SceneManager.GetActiveScene());
-
-            if (SceneManager.GetActiveScene().name == SceneNames.Bootstrap &&
-                !string.IsNullOrWhiteSpace(firstScene))
-            {
-                scenes.LoadScene(firstScene);
-            }
-        }
-
-        private void OnSceneLoaded(Scene scene, LoadSceneMode mode)
-        {
-            Inject(scene);
-        }
-
-        private void Inject(Scene scene)
-        {
-            if (!scene.IsValid() || !scene.isLoaded || services == null)
-            {
-                return;
-            }
-
-            GameObject[] roots = scene.GetRootGameObjects();
-            for (int rootIndex = 0; rootIndex < roots.Length; rootIndex++)
-            {
-                MonoBehaviour[] behaviours = roots[rootIndex].GetComponentsInChildren<MonoBehaviour>(true);
-                for (int behaviourIndex = 0; behaviourIndex < behaviours.Length; behaviourIndex++)
-                {
-                    if (behaviours[behaviourIndex] is IAppServicesConsumer consumer)
-                    {
-                        consumer.Initialize(services);
-                    }
-                }
-            }
+            Container.BindInstance(input);
+            Container.BindInstance(pause);
+            Container.BindInstance(scenes);
+            Container.BindInstance(audioService);
+            Container.BindInstance(settings);
+            Container.BindInstance(new AppStartupSettings(firstScene));
+            Container.BindInterfacesTo<AppStartup>().AsSingle();
         }
 
         private void ValidateReferences()
@@ -90,15 +47,53 @@ namespace JamStarter
             }
         }
 
-        private void OnDestroy()
-        {
-            if (activeInstance != this)
-            {
-                return;
-            }
+    }
 
-            SceneManager.sceneLoaded -= OnSceneLoaded;
-            activeInstance = null;
+    internal sealed class AppStartupSettings
+    {
+        public AppStartupSettings(string firstScene)
+        {
+            FirstScene = firstScene;
+        }
+
+        public string FirstScene { get; }
+    }
+
+    internal sealed class AppStartup : IInitializable
+    {
+        private readonly InputReader input;
+        private readonly SceneLoader scenes;
+        private readonly SettingsService settings;
+        private readonly SignalBus signalBus;
+        private readonly AppStartupSettings startupSettings;
+
+        public AppStartup(
+            InputReader input,
+            SceneLoader scenes,
+            SettingsService settings,
+            SignalBus signalBus,
+            AppStartupSettings startupSettings)
+        {
+            this.input = input;
+            this.scenes = scenes;
+            this.settings = settings;
+            this.signalBus = signalBus;
+            this.startupSettings = startupSettings;
+        }
+
+        public void Initialize()
+        {
+            settings.Initialize();
+            input.UseUI();
+
+            Scene activeScene = SceneManager.GetActiveScene();
+            signalBus.Fire(new AppReadySignal(activeScene.name));
+
+            if (activeScene.name == SceneNames.Bootstrap &&
+                !string.IsNullOrWhiteSpace(startupSettings.FirstScene))
+            {
+                scenes.LoadScene(startupSettings.FirstScene);
+            }
         }
     }
 }

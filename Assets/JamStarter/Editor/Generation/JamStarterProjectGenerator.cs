@@ -15,6 +15,7 @@ using UnityEngine.InputSystem;
 using UnityEngine.InputSystem.UI;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
+using Zenject;
 using Object = UnityEngine.Object;
 
 namespace JamStarter.Editor
@@ -26,6 +27,8 @@ namespace JamStarter.Editor
     public static class JamStarterProjectGenerator
     {
         private const string SettingsFolder = JamStarterPaths.Root + "/Settings";
+        private const string ResourcesFolder = JamStarterPaths.Root + "/Resources";
+        private const string ProjectContextPath = ResourcesFolder + "/ProjectContext.prefab";
         private const string MaterialsFolder = JamStarterPaths.Root + "/Art/Materials";
         private const string InputActionsPath = SettingsFolder + "/JamInputActions.inputactions";
         private const string LegacyInputActionsPath = SettingsFolder + "/JamInputActions.asset";
@@ -102,7 +105,8 @@ namespace JamStarter.Editor
             inputConfiguration = AssetDatabase.LoadAssetAtPath<InputConfiguration>(InputConfigurationPath)
                 ?? throw new InvalidOperationException("The Input Configuration was lost during asset import.");
 
-            CreateBootstrapScene(inputConfiguration, mixer);
+            CreateProjectContext(inputConfiguration, mixer);
+            CreateBootstrapScene();
             CreateMainMenuScene();
             CreateSandboxScene(ground, accent);
 
@@ -129,6 +133,7 @@ namespace JamStarter.Editor
             EnsureFolder("Assets", "JamStarter");
             EnsureFolder(JamStarterPaths.Root, "Scenes");
             EnsureFolder(JamStarterPaths.Root, "Settings");
+            EnsureFolder(JamStarterPaths.Root, "Resources");
             EnsureFolder(JamStarterPaths.Root, "Art");
             EnsureFolder(JamStarterPaths.Root + "/Art", "Materials");
         }
@@ -431,11 +436,12 @@ namespace JamStarter.Editor
             return material;
         }
 
-        private static void CreateBootstrapScene(InputConfiguration inputConfiguration, MixerParts mixer)
+        private static void CreateProjectContext(InputConfiguration inputConfiguration, MixerParts mixer)
         {
-            Scene scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+            AssetDatabase.DeleteAsset(ProjectContextPath);
 
-            var root = new GameObject("AppRoot");
+            var root = new GameObject("ProjectContext");
+            ProjectContext projectContext = root.AddComponent<ProjectContext>();
             AppBootstrap bootstrap = root.AddComponent<AppBootstrap>();
             GamePauseService pause = root.AddComponent<GamePauseService>();
             InputReader input = root.AddComponent<InputReader>();
@@ -468,7 +474,6 @@ namespace JamStarter.Editor
 
             SceneLoader sceneLoader = root.AddComponent<SceneLoader>();
             SetObject(sceneLoader, "loadingOverlay", fadeGroup);
-            SetObject(sceneLoader, "pauseService", pause);
 
             ConfigureEventSystem(root.transform);
 
@@ -488,7 +493,25 @@ namespace JamStarter.Editor
             SetObject(bootstrap, "audioService", audio);
             SetObject(bootstrap, "settings", settings);
 
+            projectContext.Installers = new MonoInstaller[] { bootstrap };
+            EditorUtility.SetDirty(projectContext);
+
+            PrefabUtility.SaveAsPrefabAsset(root, ProjectContextPath);
+            Object.DestroyImmediate(root);
+        }
+
+        private static void CreateBootstrapScene()
+        {
+            Scene scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+            CreateSceneContext();
+
             EditorSceneManager.SaveScene(scene, JamStarterPaths.BootstrapScene);
+        }
+
+        private static void CreateSceneContext()
+        {
+            var contextObject = new GameObject("SceneContext");
+            contextObject.AddComponent<SceneContext>();
         }
 
         private static void ConfigureEventSystem(Transform parent)
@@ -504,6 +527,7 @@ namespace JamStarter.Editor
         private static void CreateMainMenuScene()
         {
             Scene scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+            CreateSceneContext();
             CreateCamera(Background);
 
             var controllerObject = new GameObject("Main Menu Flow");
@@ -545,6 +569,7 @@ namespace JamStarter.Editor
         private static void CreateSandboxScene(Material groundMaterial, Material accentMaterial)
         {
             Scene scene = EditorSceneManager.NewScene(NewSceneSetup.EmptyScene, NewSceneMode.Single);
+            CreateSceneContext();
 
             Camera camera = CreateCamera(Background);
             camera.transform.position = new Vector3(0f, 7.5f, -10f);

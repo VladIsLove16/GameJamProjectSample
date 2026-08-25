@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using Zenject;
 
 namespace JamStarter
 {
@@ -16,21 +17,22 @@ namespace JamStarter
         [SerializeField] private CanvasGroup loadingOverlay;
         [SerializeField, Min(0f)] private float fadeDuration = 0.2f;
 
-        [Header("Services")]
-        [SerializeField] private GamePauseService pauseService;
-
         private Coroutine loadRoutine;
-
-        public event Action<bool> LoadingChanged;
-        public event Action<float> LoadingProgressChanged;
-        public event Action<string> SceneLoadStarted;
-        public event Action<string> SceneLoadCompleted;
+        private GamePauseService pauseService;
+        private SignalBus signalBus;
 
         public bool IsLoading => loadRoutine != null;
 
         private void Awake()
         {
             SetOverlay(0f, false);
+        }
+
+        [Inject]
+        private void Construct(GamePauseService pause, SignalBus events)
+        {
+            pauseService = pause;
+            signalBus = events;
         }
 
         /// <summary>UnityEvent-friendly scene navigation entry point.</summary>
@@ -95,9 +97,8 @@ namespace JamStarter
 
         private IEnumerator LoadSceneRoutine(string sceneName)
         {
-            LoadingChanged?.Invoke(true);
-            SceneLoadStarted?.Invoke(sceneName);
-            LoadingProgressChanged?.Invoke(0f);
+            signalBus?.Fire(new SceneLoadStartedSignal(sceneName));
+            signalBus?.Fire(new SceneLoadProgressSignal(sceneName, 0f));
             SetOverlay(loadingOverlay != null ? loadingOverlay.alpha : 0f, true);
 
             yield return FadeOverlay(1f);
@@ -112,31 +113,32 @@ namespace JamStarter
             catch (Exception exception)
             {
                 Debug.LogException(exception, this);
-                FinishFailedLoad();
+                FinishFailedLoad(sceneName);
                 yield break;
             }
 
             if (operation == null)
             {
                 Debug.LogError($"Unity could not start loading scene '{sceneName}'.", this);
-                FinishFailedLoad();
+                FinishFailedLoad(sceneName);
                 yield break;
             }
 
             while (!operation.isDone)
             {
                 // Unity reports scene loading from 0 to 0.9 until activation completes.
-                LoadingProgressChanged?.Invoke(Mathf.Clamp01(operation.progress / 0.9f));
+                signalBus?.Fire(new SceneLoadProgressSignal(
+                    sceneName,
+                    Mathf.Clamp01(operation.progress / 0.9f)));
                 yield return null;
             }
 
-            LoadingProgressChanged?.Invoke(1f);
-            SceneLoadCompleted?.Invoke(sceneName);
+            signalBus?.Fire(new SceneLoadProgressSignal(sceneName, 1f));
+            signalBus?.Fire(new SceneLoadCompletedSignal(sceneName));
             yield return FadeOverlay(0f);
 
             SetOverlay(0f, false);
             loadRoutine = null;
-            LoadingChanged?.Invoke(false);
         }
 
         private IEnumerator FadeOverlay(float targetAlpha)
@@ -178,11 +180,11 @@ namespace JamStarter
             Time.timeScale = 1f;
         }
 
-        private void FinishFailedLoad()
+        private void FinishFailedLoad(string sceneName)
         {
             SetOverlay(0f, false);
             loadRoutine = null;
-            LoadingChanged?.Invoke(false);
+            signalBus?.Fire(new SceneLoadFailedSignal(sceneName));
         }
 
         private void SetOverlay(float alpha, bool blocksInput)

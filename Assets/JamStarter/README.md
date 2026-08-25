@@ -13,21 +13,41 @@
    `Jam Starter > Quick Build Active Target`.
 
 `Generate or Rebuild Starter` предназначена для восстановления исходного шаблона.
-Она пересоздаёт три сцены и Audio Mixer, поэтому не запускайте её после того, как
+Она пересоздаёт три сцены, `ProjectContext` prefab и Audio Mixer, поэтому не запускайте её после того, как
 начали изменять сгенерированные сцены или настройки микшера. Runtime-код команда
 не перезаписывает, а существующий Input Actions asset сохраняет.
 
 ## Архитектура
 
-- `Bootstrap` содержит постоянный `AppBootstrap` — composition root приложения.
-- Сценовый компонент реализует `IAppServicesConsumer` и получает `AppServices`
-  через `Initialize`. Глобального service locator нет.
+- `Resources/ProjectContext.prefab` содержит постоянные сервисы, а
+  `AppBootstrap : MonoInstaller` регистрирует их в Zenject-контейнере.
+- В каждой сцене есть `SceneContext`; зависимости поступают в компоненты через
+  конструкторы обычных классов или методы с `[Inject]`. Service locator и ручной
+  обход сцены отсутствуют.
 - `SceneLoader` выполняет одиночную асинхронную загрузку, блокирует повторный
   запрос и использует fade, независимый от `Time.timeScale`.
 - `GamePauseService` централизованно управляет паузой и восстанавливает прежний
   масштаб времени.
 - `CountdownTimer`, `SeededRandom` и `ComponentPool<T>` не зависят от конкретной
   игры и готовы для игровой логики.
+
+Zenject/Extenject 9.3.2 встроен в `Packages/net.bobbo.extenject`, поэтому проект
+полностью работает офлайн. Это компактная UPM-упаковка без демонстрационных сцен.
+
+## EventBus
+
+Глобальные события реализованы через типизированный Zenject `SignalBus`. Все
+сигналы объявляются централизованно в `AppSignalInstaller`:
+
+- `AppReadySignal`;
+- `SceneLoadStartedSignal`, `SceneLoadProgressSignal`,
+  `SceneLoadCompletedSignal`, `SceneLoadFailedSignal`;
+- `PauseChangedSignal`;
+- `SettingsChangedSignal`.
+
+Получатель внедряет `SignalBus`, подписывается при инициализации и вызывает
+`TryUnsubscribe` при уничтожении. Высокочастотный ввод остаётся прямым API
+`InputReader`: SignalBus не используется как скрытая замена каждому вызову метода.
 
 ## Ввод
 

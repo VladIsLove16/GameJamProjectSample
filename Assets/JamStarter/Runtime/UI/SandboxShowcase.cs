@@ -1,4 +1,5 @@
 using UnityEngine;
+using Zenject;
 
 namespace JamStarter
 {
@@ -7,7 +8,7 @@ namespace JamStarter
     /// with the Sandbox scene when real gameplay is ready.
     /// </summary>
     [DisallowMultipleComponent]
-    public sealed class SandboxShowcase : MonoBehaviour, IAppServicesConsumer
+    public sealed class SandboxShowcase : MonoBehaviour
     {
         [SerializeField] private Transform target;
         [SerializeField, Min(0f)] private float movementSpeed = 4f;
@@ -15,9 +16,10 @@ namespace JamStarter
 
         private InputReader input;
 
-        public void Initialize(AppServices services)
+        [Inject]
+        private void Construct(InputReader inputReader)
         {
-            input = services.Input;
+            input = inputReader;
         }
 
         private void Update()

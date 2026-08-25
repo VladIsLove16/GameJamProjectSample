@@ -2,11 +2,12 @@ using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+using Zenject;
 
 namespace JamStarter
 {
     [DisallowMultipleComponent]
-    public sealed class SettingsPanel : MonoBehaviour, IAppServicesConsumer
+    public sealed class SettingsPanel : MonoBehaviour
     {
         [SerializeField] private Slider masterVolume;
         [SerializeField] private Slider musicVolume;
@@ -16,6 +17,7 @@ namespace JamStarter
         [SerializeField] private TMP_Dropdown quality;
 
         private SettingsService settings;
+        private SignalBus signalBus;
         private bool suppressCallbacks;
         private bool listenersBound;
 
@@ -24,21 +26,23 @@ namespace JamStarter
             BindListeners();
         }
 
-        public void Initialize(AppServices services)
+        [Inject]
+        private void Construct(SettingsService settingsService, SignalBus events)
         {
-            if (settings == services.Settings)
+            if (settings == settingsService && signalBus == events)
             {
                 Refresh();
                 return;
             }
 
-            if (settings != null)
+            if (signalBus != null)
             {
-                settings.Changed -= OnSettingsChanged;
+                signalBus.TryUnsubscribe<SettingsChangedSignal>(OnSettingsChanged);
             }
 
-            settings = services.Settings;
-            settings.Changed += OnSettingsChanged;
+            settings = settingsService;
+            signalBus = events;
+            signalBus.Subscribe<SettingsChangedSignal>(OnSettingsChanged);
             PopulateQualityOptions();
             Refresh();
         }
@@ -97,7 +101,7 @@ namespace JamStarter
             suppressCallbacks = false;
         }
 
-        private void OnSettingsChanged(GameSettingsSnapshot snapshot)
+        private void OnSettingsChanged(SettingsChangedSignal signal)
         {
             Refresh();
         }
@@ -144,9 +148,9 @@ namespace JamStarter
 
         private void OnDestroy()
         {
-            if (settings != null)
+            if (signalBus != null)
             {
-                settings.Changed -= OnSettingsChanged;
+                signalBus.TryUnsubscribe<SettingsChangedSignal>(OnSettingsChanged);
             }
         }
     }
