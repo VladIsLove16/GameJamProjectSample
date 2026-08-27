@@ -1,0 +1,6 @@
+name: Main Config
+version: 1.0.0
+models:
+  - name: GPT-4o
+    provider: free-trial
+    model: gpt-4o

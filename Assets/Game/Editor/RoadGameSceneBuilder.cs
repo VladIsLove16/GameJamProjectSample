@@ -39,7 +39,15 @@ namespace RoadOfLife.Editor
         [MenuItem(MenuRoot + "/Build Prototype Scene", false, 100)]
         public static void BuildPrototypeScene()
         {
-            BuildPrototypeSceneInternal(true);
+            if (!BuildPrototypeSceneInternal(true))
+            {
+                return;
+            }
+
+            if (EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo())
+            {
+                EditorSceneManager.OpenScene(SandboxScenePath, OpenSceneMode.Single);
+            }
         }
 
         /// <summary>

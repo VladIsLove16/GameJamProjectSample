@@ -1,5 +1,4 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Text;
 using JamStarter;
@@ -20,14 +19,11 @@ namespace RoadOfLife
         [SerializeField] private RoadGameView gameView;
         [SerializeField] private SandboxController sandboxController;
 
-        [Header("Pacing")]
-        [SerializeField, Min(0.1f)] private float resultDisplaySeconds = 1.15f;
-
         private InputReader input;
         private SceneLoader scenes;
         private RoadGameSession session;
         private ChoiceResolution pendingResolution;
-        private Coroutine advanceRoutine;
+        private readonly List<string> tripJournal = new List<string>(RoadGameSession.TotalTrips);
         private ChoiceSide navigationChoice;
         private bool initialized;
         private bool choiceInProgress;
@@ -76,8 +72,6 @@ namespace RoadOfLife
 
         public void StartNewSession()
         {
-            StopAdvanceRoutine();
-
             try
             {
                 var database = RoadCardDatabase.FromTsv(cardsSource);
@@ -96,6 +90,7 @@ namespace RoadOfLife
 
             initialized = true;
             pendingResolution = null;
+            tripJournal.Clear();
             navigationChoice = ChoiceSide.None;
             choiceInProgress = false;
             input.UseGameplay();
@@ -224,6 +219,7 @@ namespace RoadOfLife
             try
             {
                 pendingResolution = session.Choose(side);
+                RecordCompletedTrip(pendingResolution);
             }
             catch (Exception exception)
             {
@@ -241,15 +237,7 @@ namespace RoadOfLife
 
             gameView.SetStats(pendingResolution.AfterUpgrades, true);
             gameView.ShowChoiceResult(resultText, pendingResolution.Choice.Delta);
-            StopAdvanceRoutine();
-            advanceRoutine = StartCoroutine(AutoAdvanceAfterResult());
-        }
-
-        private IEnumerator AutoAdvanceAfterResult()
-        {
-            yield return new WaitForSeconds(resultDisplaySeconds);
-            advanceRoutine = null;
-            CompletePendingResolution();
+            gameView.FocusContinue();
         }
 
         private void OnContinueRequested()
@@ -264,16 +252,16 @@ namespace RoadOfLife
                 return;
             }
 
-            StopAdvanceRoutine();
             ChoiceResolution resolution = pendingResolution;
             pendingResolution = null;
 
             if (resolution.Failure != FailureReason.None || session.Stage == RoadSessionStage.Lost)
             {
-                gameView.ShowDefeat(GetFailureText(resolution.Failure));
+                string defeatText = GetFailureText(resolution.Failure);
+                gameView.ShowDefeat(defeatText, BuildJourneyJournal());
                 ShowTerminalResult(
                     "РЕЙС НЕ ЗАВЕРШЁН",
-                    GetFailureText(resolution.Failure),
+                    ComposeEndingText(defeatText),
                     false);
                 return;
             }
@@ -282,8 +270,8 @@ namespace RoadOfLife
             {
                 const string victory =
                     "Три рейса через Ладогу завершены. Груз доставлен, люди вывезены на Большую землю.";
-                gameView.ShowVictory(victory);
-                ShowTerminalResult("ДОРОГА ПРОЙДЕНА", victory, true);
+                gameView.ShowVictory(victory, BuildJourneyJournal());
+                ShowTerminalResult("ДОРОГА ПРОЙДЕНА", ComposeEndingText(victory), true);
                 return;
             }
 
@@ -347,6 +335,36 @@ namespace RoadOfLife
             }
         }
 
+        private void RecordCompletedTrip(ChoiceResolution resolution)
+        {
+            if (!resolution.TripCompleted || resolution.Failure != FailureReason.None)
+            {
+                return;
+            }
+
+            tripJournal.Add(
+                $"Рейс {session.CompletedTrips}: " +
+                $"{(resolution.Card.Phase == RoadCardPhase.ToCity ? "груз доставлен" : "люди вывезены")}; " +
+                $"темп {resolution.AfterUpgrades.Tempo}, мотор {resolution.AfterUpgrades.Engine}, " +
+                $"видимость {resolution.AfterUpgrades.Visibility}, груз {resolution.AfterUpgrades.Load}.");
+        }
+
+        private string BuildJourneyJournal()
+        {
+            if (tripJournal.Count == 0)
+            {
+                return string.Empty;
+            }
+
+            return "ЖУРНАЛ СМЕНЫ\n" + string.Join("\n", tripJournal);
+        }
+
+        private string ComposeEndingText(string body)
+        {
+            string journal = BuildJourneyJournal();
+            return string.IsNullOrEmpty(journal) ? body : body + "\n\n" + journal;
+        }
+
         private void OnRestartRequested()
         {
             scenes?.ReloadActiveScene();
@@ -403,31 +421,9 @@ namespace RoadOfLife
             };
         }
 
-        private void StopAdvanceRoutine()
-        {
-            if (advanceRoutine == null)
-            {
-                return;
-            }
-
-            StopCoroutine(advanceRoutine);
-            advanceRoutine = null;
-        }
-
         private void OnDestroy()
         {
-            StopAdvanceRoutine();
             UnbindEvents();
         }
-
-#if UNITY_EDITOR
-        private void OnValidate()
-        {
-            if (resultDisplaySeconds < 0.1f)
-            {
-                resultDisplaySeconds = 0.1f;
-            }
-        }
-#endif
     }
 }

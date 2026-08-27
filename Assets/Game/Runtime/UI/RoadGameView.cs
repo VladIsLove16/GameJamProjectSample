@@ -265,22 +265,31 @@ namespace RoadOfLife
             }
         }
 
-        public void ShowVictory(string bodyText = null)
+        public void ShowVictory(string bodyText = null, string journalText = null)
         {
             ShowEnding(
                 "Дорога пройдена",
-                string.IsNullOrWhiteSpace(bodyText)
+                ComposeEndingBody(
+                    string.IsNullOrWhiteSpace(bodyText)
                     ? "Три рейса завершены. Груз доставлен через Ладогу."
-                    : bodyText);
+                    : bodyText,
+                    journalText));
         }
 
-        public void ShowDefeat(string bodyText)
+        public void ShowDefeat(string bodyText, string journalText = null)
         {
             ShowEnding(
                 "Рейс не завершён",
-                string.IsNullOrWhiteSpace(bodyText)
+                ComposeEndingBody(
+                    string.IsNullOrWhiteSpace(bodyText)
                     ? "Машина не смогла продолжить путь."
-                    : bodyText);
+                    : bodyText,
+                    journalText));
+        }
+
+        private static string ComposeEndingBody(string body, string journal)
+        {
+            return string.IsNullOrWhiteSpace(journal) ? body : body + "\n\n" + journal;
         }
 
         public void SetControlsHint(string hint)
