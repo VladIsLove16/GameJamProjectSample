@@ -1,0 +1,20 @@
+{
+  "name": "RoadOfLife.Runtime",
+  "rootNamespace": "RoadOfLife",
+  "references": [
+    "JamStarter.Runtime",
+    "Zenject",
+    "Unity.InputSystem",
+    "UnityEngine.UI",
+    "Unity.TextMeshPro"
+  ],
+  "includePlatforms": [],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": true,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false
+}

@@ -1,0 +1,21 @@
+{
+  "name": "RoadOfLife.Editor",
+  "rootNamespace": "RoadOfLife.Editor",
+  "references": [
+    "RoadOfLife.Runtime",
+    "JamStarter.Runtime",
+    "UnityEngine.UI",
+    "Unity.TextMeshPro"
+  ],
+  "includePlatforms": [
+    "Editor"
+  ],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": true,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false
+}

@@ -118,6 +118,15 @@ namespace JamStarter
 
         public void CompleteSandboxFlow()
         {
+            ShowResult("Flow complete\nReplace Sandbox with your game scene");
+        }
+
+        /// <summary>
+        /// Finishes the active game flow while keeping pause/input state synchronized
+        /// with the starter's existing result overlay.
+        /// </summary>
+        public void ShowResult(string message)
+        {
             if (input == null)
             {
                 return;
@@ -127,7 +136,7 @@ namespace JamStarter
             input.UseUI();
             pauseScreen.Hide();
             settingsScreen.Hide();
-            resultMessage.text = "Flow complete\nReplace Sandbox with your game scene";
+            resultMessage.text = string.IsNullOrWhiteSpace(message) ? "Рейс завершён" : message;
             resultScreen.Show();
             overlayState = OverlayState.Result;
         }

@@ -74,6 +74,17 @@
                     "isPartOfComposite": false
                 },
                 {
+                    "name": "",
+                    "id": "63b3c430-aaec-43ac-b106-1be1100f5a73",
+                    "path": "<Gamepad>/dpad",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Move",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
                     "name": "2DVector",
                     "id": "747dea02-be31-4e88-93c3-e1c3f1417e70",
                     "path": "2DVector",
@@ -242,6 +253,28 @@
                     "name": "",
                     "id": "8d637bb5-826c-4959-bd82-abebd6beff35",
                     "path": "<Touchscreen>/primaryTouch/press",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Primary",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "fbf51f18-1a79-49df-a2f7-510508aed1ca",
+                    "path": "<Keyboard>/enter",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "",
+                    "action": "Primary",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "53359618-b63e-4b3c-bf23-b0fb205968dd",
+                    "path": "<Keyboard>/space",
                     "interactions": "",
                     "processors": "",
                     "groups": "",
