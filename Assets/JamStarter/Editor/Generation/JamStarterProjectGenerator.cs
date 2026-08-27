@@ -63,6 +63,18 @@ namespace JamStarter.Editor
             public Button Back;
         }
 
+        private sealed class IntroRefs
+        {
+            public GameObject Root;
+            public IntroSequenceView View;
+            public GameObject[] Panels;
+            public TMP_Text Progress;
+            public Button Next;
+            public Button Back;
+            public Button Skip;
+            public Button Start;
+        }
+
         [MenuItem("Jam Starter/Generate or Rebuild Starter", priority = 0)]
         private static void GenerateFromMenu()
         {
@@ -569,20 +581,79 @@ namespace JamStarter.Editor
 
             Button start = CreateButton(panel.transform, "НАЧАТЬ РЕЙС", Accent);
             Button settingsButton = CreateButton(panel.transform, "SETTINGS", AccentBlue);
+            Button historyButton = CreateButton(panel.transform, "ИСТОРИЯ", PanelLight);
             Button quit = CreateButton(panel.transform, "QUIT", PanelLight);
             UnityEventTools.AddPersistentListener(start.onClick, controller.StartGame);
             UnityEventTools.AddPersistentListener(settingsButton.onClick, controller.OpenSettings);
+            UnityEventTools.AddPersistentListener(historyButton.onClick, controller.OpenIntro);
             UnityEventTools.AddPersistentListener(quit.onClick, controller.Quit);
             ConfigureScreen(mainScreen, mainRoot.GetComponent<CanvasGroup>(), start);
 
             SettingsUi settingsUi = CreateSettingsScreen(safeArea);
             UnityEventTools.AddPersistentListener(settingsUi.Back.onClick, controller.CloseSettings);
+            IntroRefs intro = BuildIntroScreen(safeArea);
 
             SetObject(controller, "mainScreen", mainScreen);
             SetObject(controller, "settingsScreen", settingsUi.Screen);
             SetObject(controller, "settingsPanel", settingsUi.Panel);
+            SetObject(controller, "introSequence", intro.View);
 
             EditorSceneManager.SaveScene(scene, JamStarterPaths.MainMenuScene);
+        }
+
+        private static IntroRefs BuildIntroScreen(Transform parent)
+        {
+            UIScreen screen = CreateOverlayScreen("Intro Screen", parent, out GameObject root, out GameObject content);
+            IntroSequenceView view = root.AddComponent<IntroSequenceView>();
+            var panels = new GameObject[6];
+            string[] headings =
+            {
+                "ЗИМА 1941 ГОДА",
+                "ДОРОГА ЖИЗНИ",
+                "ЦЕЛЬ МИССИИ",
+                "КАК ИГРАТЬ",
+                "ЧЕТЫРЕ ХАРАКТЕРИСТИКИ",
+                "РЕШЕНИЕ ЗА ВАМИ",
+            };
+            string[] bodies =
+            {
+                "Ленинград отрезан. Через замёрзшее Ладожское озеро идёт единственная связь с Большой землёй.",
+                "Ледовая трасса доставляет в город продовольствие и помогает вывезти людей из осаждённого Ленинграда.",
+                "Проведите три рейса: доставьте груз в город и вывезите людей обратно, сохранив машину и колею.",
+                "На каждой карточке выберите один из двух вариантов. Потяните карточку влево или вправо, затем подтвердите решение.",
+                "Темп, двигатель, видимость и нагрузка меняются после каждого выбора. Крайнее значение любой шкалы означает поражение.",
+                "Следите за последствиями, выбирайте улучшения трассы между рейсами и доведите смену до конца.",
+            };
+
+            for (int index = 0; index < panels.Length; index++)
+            {
+                GameObject panel = CreatePanel(content.transform, new Vector2(560f, 420f));
+                panel.name = $"Intro Panel {index + 1}";
+                TMP_Text heading = CreateText(panel.transform, headings[index], 34f, FontStyles.Bold, Accent, 70f);
+                TMP_Text body = CreateText(panel.transform, bodies[index], 24f, FontStyles.Normal, TextPrimary, 240f);
+                panels[index] = panel;
+            }
+
+            TMP_Text progress = CreateText(content.transform, "1/6", 18f, FontStyles.Normal, TextSecondary, 36f);
+            Button back = CreateButton(content.transform, "НАЗАД", PanelLight);
+            Button next = CreateButton(content.transform, "ДАЛЕЕ", Accent);
+            Button skip = CreateButton(content.transform, "ПРОПУСТИТЬ", PanelLight);
+            Button start = CreateButton(content.transform, "НАЧАТЬ РЕЙС", Accent);
+            view.Configure(panels, progress, next, back, skip, start);
+            ConfigureScreen(screen, root.GetComponent<CanvasGroup>(), next);
+            root.SetActive(false);
+
+            return new IntroRefs
+            {
+                Root = root,
+                View = view,
+                Panels = panels,
+                Progress = progress,
+                Next = next,
+                Back = back,
+                Skip = skip,
+                Start = start,
+            };
         }
 
         private static void CreateSandboxScene(Material groundMaterial, Material accentMaterial)

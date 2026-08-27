@@ -8,7 +8,7 @@ namespace JamStarter
     [DisallowMultipleComponent]
     public sealed class SettingsService : MonoBehaviour
     {
-        public const int CurrentSchemaVersion = 1;
+        public const int CurrentSchemaVersion = 2;
         public const string PlayerPrefsKey = "JamStarter.Settings.v1";
 
         private const float MutedDecibels = -80f;
@@ -90,6 +90,19 @@ namespace JamStarter
             }
 
             current.showExactStats = value;
+            PublishChanged();
+        }
+
+        public void MarkIntroSeen()
+        {
+            EnsureInitialized();
+            if (current.introSeen)
+            {
+                return;
+            }
+
+            current.introSeen = true;
+            Save();
             PublishChanged();
         }
 

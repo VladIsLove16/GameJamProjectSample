@@ -12,6 +12,7 @@ namespace JamStarter
         public float uiVolume = 1f;
         public bool fullscreen = true;
         public bool showExactStats = true;
+        public bool introSeen;
         public int qualityLevel = -1;
 
         public GameSettings Clone()
@@ -25,6 +26,7 @@ namespace JamStarter
                 uiVolume = uiVolume,
                 fullscreen = fullscreen,
                 showExactStats = showExactStats,
+                introSeen = introSeen,
                 qualityLevel = qualityLevel,
             };
         }
@@ -40,6 +42,7 @@ namespace JamStarter
             UiVolume = source.uiVolume;
             Fullscreen = source.fullscreen;
             ShowExactStats = source.showExactStats;
+            IntroSeen = source.introSeen;
             QualityLevel = source.qualityLevel;
         }
 
@@ -49,6 +52,7 @@ namespace JamStarter
         public float UiVolume { get; }
         public bool Fullscreen { get; }
         public bool ShowExactStats { get; }
+        public bool IntroSeen { get; }
         public int QualityLevel { get; }
     }
 }
