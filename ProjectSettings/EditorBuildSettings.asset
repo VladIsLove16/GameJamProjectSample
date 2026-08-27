@@ -6,13 +6,13 @@ EditorBuildSettings:
   serializedVersion: 2
   m_Scenes:
   - enabled: 1
-    path: Assets/JamStarter/Scenes/Bootstrap.unity
+    path: Assets/Scenes/Bootstrap.unity
     guid: 7a7af43a996d5034ba647eac20141bca
   - enabled: 1
-    path: Assets/JamStarter/Scenes/MainMenu.unity
+    path: Assets/Scenes/MainMenu.unity
     guid: f5e0856e05486424fb000aa605460b43
   - enabled: 1
-    path: Assets/JamStarter/Scenes/Sandbox.unity
+    path: Assets/Scenes/Sandbox.unity
     guid: 279da25fcab1bcf41a833ca59cbfde7f
   m_configObjects:
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}

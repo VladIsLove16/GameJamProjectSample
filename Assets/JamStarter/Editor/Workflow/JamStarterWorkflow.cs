@@ -31,6 +31,11 @@ namespace JamStarter.Editor
 
     public static class JamStarterWorkflow
     {
+        static JamStarterWorkflow()
+        {
+            SetBootstrapAsPlayModeStartScene();
+        }
+
         [MenuItem("Jam Starter/Play From Bootstrap", priority = 10)]
         public static void PlayFromBootstrap()
         {
@@ -51,6 +56,13 @@ namespace JamStarter.Editor
             EditorSceneManager.playModeStartScene = null;
         }
 
+        [MenuItem("Jam Starter/Use Bootstrap On Play", priority = 12)]
+        public static void UseBootstrapOnPlay()
+        {
+            SetBootstrapAsPlayModeStartScene();
+            Debug.Log("Play Mode will start from Bootstrap and then load MainMenu.");
+        }
+
         [MenuItem("Jam Starter/Configure Build Scenes", priority = 30)]
         public static void ConfigureBuildScenes()
         {
@@ -58,6 +70,15 @@ namespace JamStarter.Editor
                 JamStarterPaths.BuildScenes,
                 path => new EditorBuildSettingsScene(path, true));
             Debug.Log("Jam Starter build scene order configured: Bootstrap, MainMenu, Sandbox.");
+        }
+
+        private static void SetBootstrapAsPlayModeStartScene()
+        {
+            SceneAsset bootstrap = AssetDatabase.LoadAssetAtPath<SceneAsset>(JamStarterPaths.BootstrapScene);
+            if (bootstrap != null)
+            {
+                EditorSceneManager.playModeStartScene = bootstrap;
+            }
         }
 
         [MenuItem("Jam Starter/Validate Project", priority = 31)]

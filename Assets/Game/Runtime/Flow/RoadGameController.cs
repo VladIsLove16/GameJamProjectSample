@@ -18,15 +18,28 @@ namespace RoadOfLife
         [SerializeField] private TextAsset cardsSource;
         [SerializeField] private RoadGameView gameView;
         [SerializeField] private SandboxController sandboxController;
+        [SerializeField] private IntroSequenceView firstLaunchTutorial;
 
         private InputReader input;
         private SceneLoader scenes;
+        private SettingsService settings;
         private RoadGameSession session;
         private ChoiceResolution pendingResolution;
         private readonly List<string> tripJournal = new List<string>(RoadGameSession.TotalTrips);
         private ChoiceSide navigationChoice;
         private bool initialized;
         private bool choiceInProgress;
+        private bool sessionIntroductionPending;
+        private int sessionIntroductionIndex;
+
+        private static readonly string[] SessionIntroductions =
+        {
+            "Ледовая трасса\n\nЛенинград окружён, но связь с Большой землёй не прервалась. По льду Ладожского озера идут машины с продовольствием и возвращаются с эвакуированными людьми.",
+            "Новая смена\n\nДля города каждый рейс имеет значение. Проведите грузовик по Дороге жизни, доставьте необходимое в Ленинград и помогите вывезти людей из блокады.",
+            "Через Ладогу\n\nЗима превратила озеро в опасную дорогу. Лёд, метель и темнота ждут впереди, но именно здесь проходит путь, который поддерживает жизнь осаждённого города.",
+            "Цена рейса\n\nЗа каждым ящиком груза и каждым пассажиром стоит чья-то жизнь. Вам предстоит сделать несколько рейсов по ледовой трассе, сохранив машину, груз и людей.",
+            "Дорога жизни\n\nЛенинград ждёт продовольствие, медикаменты и помощь. Вы отправляетесь на лёд Ладожского озера, чтобы выполнить свой долг и вернуть людей с линии блокады.",
+        };
 
         public RoadGameSession Session => session;
 
@@ -41,11 +54,20 @@ namespace RoadOfLife
             sandboxController = sandbox;
         }
 
+        public void ConfigureFirstLaunchTutorial(IntroSequenceView tutorial)
+        {
+            firstLaunchTutorial = tutorial;
+        }
+
         [Inject]
-        private void Construct(InputReader inputReader, SceneLoader sceneLoader)
+        private void Construct(
+            InputReader inputReader,
+            SceneLoader sceneLoader,
+            SettingsService settingsService)
         {
             input = inputReader;
             scenes = sceneLoader;
+            settings = settingsService;
         }
 
         private void Start()
@@ -93,11 +115,24 @@ namespace RoadOfLife
             tripJournal.Clear();
             navigationChoice = ChoiceSide.None;
             choiceInProgress = false;
+            sessionIntroductionPending = true;
+            sessionIntroductionIndex = UnityEngine.Random.Range(0, SessionIntroductions.Length);
             input.UseGameplay();
             gameView.SetControlsHint(
                 "Мышь / сенсор: потяните карточку   •   Клавиатура / геймпад: ← → и подтвердить");
             gameView.SetStats(session.Stats.Snapshot, false);
             PresentCurrentCard();
+            if (firstLaunchTutorial != null && !settings.Current.IntroSeen)
+            {
+                firstLaunchTutorial.Completed += OnFirstLaunchTutorialCompleted;
+                gameView.SetInteractionEnabled(false);
+                input.UseUI();
+                firstLaunchTutorial.Show();
+            }
+            else
+            {
+                ShowSessionIntroduction();
+            }
         }
 
         private void BindEvents()
@@ -130,6 +165,20 @@ namespace RoadOfLife
                 input.PrimaryPressed -= OnPrimaryPressed;
                 input.SecondaryPressed -= OnSecondaryPressed;
             }
+        }
+
+        private void OnFirstLaunchTutorialCompleted()
+        {
+            settings?.MarkIntroSeen();
+            firstLaunchTutorial.Completed -= OnFirstLaunchTutorialCompleted;
+            ShowSessionIntroduction();
+        }
+
+        private void ShowSessionIntroduction()
+        {
+            input.UseUI();
+            gameView.ShowSessionIntroduction(SessionIntroductions[sessionIntroductionIndex]);
+            gameView.FocusContinue();
         }
 
         private void PresentCurrentCard()
@@ -243,6 +292,14 @@ namespace RoadOfLife
 
         private void OnContinueRequested()
         {
+            if (sessionIntroductionPending)
+            {
+                sessionIntroductionPending = false;
+                input.UseGameplay();
+                PresentCurrentCard();
+                return;
+            }
+
             CompletePendingResolution();
         }
 
@@ -390,7 +447,7 @@ namespace RoadOfLife
         {
             if (value != 0)
             {
-                parts.Add($"{label} {(value > 0 ? "+" : "−")}{Mathf.Abs(value)}");
+                parts.Add($"{label} {(value > 0 ? "↑" : "↓")}");
             }
         }
 
@@ -424,6 +481,10 @@ namespace RoadOfLife
 
         private void OnDestroy()
         {
+            if (firstLaunchTutorial != null)
+            {
+                firstLaunchTutorial.Completed -= OnFirstLaunchTutorialCompleted;
+            }
             UnbindEvents();
         }
     }

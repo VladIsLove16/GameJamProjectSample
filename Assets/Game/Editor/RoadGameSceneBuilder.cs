@@ -23,6 +23,8 @@ namespace RoadOfLife.Editor
         private const string CardsAssetPath = "Assets/Game/Data/Cards.tsv.txt";
         private const string UiRootName = "RoadGame UI";
         public const string AutomationRequestPath = "Temp/RoadOfLife.BuildPrototypeScene.request";
+        public const string PrefabConversionRequestPath = "Temp/RoadOfLife.ConvertUiToPrefabs.request";
+        public const string SandboxSettingsPrefabRequestPath = "Temp/RoadOfLife.UseSandboxSettingsPrefab.request";
 
         private static readonly Color Background = new Color32(5, 14, 25, 255);
         private static readonly Color Sky = new Color32(9, 31, 50, 255);
@@ -48,6 +50,93 @@ namespace RoadOfLife.Editor
             {
                 EditorSceneManager.OpenScene(SandboxScenePath, OpenSceneMode.Single);
             }
+        }
+
+        [MenuItem(MenuRoot + "/Add First-Launch Tutorial To Game Scene", false, 103)]
+        public static void AddFirstLaunchTutorialToGameScene()
+        {
+            if (EditorApplication.isPlayingOrWillChangePlaymode)
+            {
+                Debug.LogWarning("Stop Play Mode before adding the first-launch tutorial.");
+                return;
+            }
+
+            SceneSetup[] previousSetup = EditorSceneManager.GetSceneManagerSetup();
+            Scene previousActive = SceneManager.GetActiveScene();
+            try
+            {
+                Scene scene = EditorSceneManager.OpenScene(SandboxScenePath, OpenSceneMode.Single);
+                Transform uiRoot = FindDescendant(FindComponentInScene<Canvas>(scene, "Sandbox Canvas")?.transform, UiRootName);
+                Transform flow = FindRoot(scene, "Sandbox Flow");
+                RoadGameController controller = flow?.GetComponent<RoadGameController>();
+                if (uiRoot == null || controller == null)
+                {
+                    throw new InvalidOperationException("Sandbox must contain RoadGame UI and RoadGameController.");
+                }
+
+                DeleteDescendantIfPresent(uiRoot, "First Launch Tutorial");
+                IntroSequenceView tutorial = BuildTutorialOverlay(uiRoot);
+                controller.ConfigureFirstLaunchTutorial(tutorial);
+                EditorSceneManager.MarkSceneDirty(scene);
+                EditorSceneManager.SaveScene(scene, SandboxScenePath);
+                Debug.Log("Road of Life first-launch tutorial was added to Sandbox.");
+            }
+            catch (Exception exception)
+            {
+                Debug.LogException(exception);
+            }
+            finally
+            {
+                RestoreSceneSetup(previousSetup, previousActive, default, false);
+            }
+        }
+
+        private static IntroSequenceView BuildTutorialOverlay(Transform parent)
+        {
+            RectTransform root = CreatePanel(
+                "First Launch Tutorial",
+                parent,
+                new Color(Background.r, Background.g, Background.b, 0.99f),
+                Vector2.zero,
+                Vector2.one,
+                true);
+            IntroSequenceView view = root.gameObject.AddComponent<IntroSequenceView>();
+            GameObject[] panels = new GameObject[5];
+            string[] headings = { "ЦЕЛЬ РЕЙСА", "ДОРОГА ЖИЗНИ", "КАК ИГРАТЬ", "ХАРАКТЕРИСТИКИ", "НАЧАЛО ПУТИ" };
+            string[] bodies =
+            {
+                "Доставьте груз в Ленинград, а затем вывезите людей через замёрзшее Ладожское озеро.",
+                "Дорога жизни была единственной ледовой связью осаждённого города с Большой землёй.",
+                "Потяните карточку влево или вправо, чтобы выбрать решение. Подтвердите последствия кнопкой.",
+                "Следите за темпом, двигателем, видимостью и нагрузкой. Край шкалы означает поражение.",
+                "Между рейсами выбирайте улучшения трассы. Проведите три рейса и завершите смену.",
+            };
+
+            for (int index = 0; index < panels.Length; index++)
+            {
+                RectTransform panel = CreatePanel(
+                    $"Tutorial Panel {index + 1}",
+                    root,
+                    PanelRaised,
+                    new Vector2(0.24f, 0.24f),
+                    new Vector2(0.76f, 0.78f),
+                    false);
+                CreateText($"Tutorial Heading {index + 1}", panel, headings[index], 34f, Warm, TextAlignmentOptions.Center);
+                Place(panel.GetChild(0).GetComponent<RectTransform>(), new Vector2(0.08f, 0.68f), new Vector2(0.92f, 0.9f));
+                CreateText($"Tutorial Body {index + 1}", panel, bodies[index], 24f, Frost, TextAlignmentOptions.Center);
+                Place(panel.GetChild(1).GetComponent<RectTransform>(), new Vector2(0.1f, 0.24f), new Vector2(0.9f, 0.65f));
+                panels[index] = panel.gameObject;
+            }
+
+            TMP_Text progress = CreateText("Tutorial Progress", root, "1/5", 18f, Muted, TextAlignmentOptions.Center);
+            Place(progress.rectTransform, new Vector2(0.42f, 0.15f), new Vector2(0.58f, 0.2f));
+            Button back = CreateButton("Tutorial Back", root, "НАЗАД", new Vector2(0.18f, 0.06f), new Vector2(0.37f, 0.13f), Panel, 18f, out _);
+            Button next = CreateButton("Tutorial Next", root, "ДАЛЕЕ", new Vector2(0.63f, 0.06f), new Vector2(0.82f, 0.13f), Accent, 18f, out _);
+            Button skip = CreateButton("Tutorial Skip", root, "ПРОПУСТИТЬ", new Vector2(0.4f, 0.02f), new Vector2(0.6f, 0.07f), Panel, 15f, out _);
+            Button start = CreateButton("Tutorial Start", root, "НАЧАТЬ РЕЙС", new Vector2(0.58f, 0.06f), new Vector2(0.82f, 0.13f), Accent, 18f, out _);
+            view.Configure(panels, progress, next, back, skip, start);
+            root.gameObject.SetActive(false);
+            return view;
         }
 
         /// <summary>
@@ -192,14 +281,36 @@ namespace RoadOfLife.Editor
 
             string absoluteRequestPath = Path.GetFullPath(
                 Path.Combine(Application.dataPath, "..", AutomationRequestPath));
-            if (!File.Exists(absoluteRequestPath))
+            string absolutePrefabRequestPath = Path.GetFullPath(
+                Path.Combine(Application.dataPath, "..", PrefabConversionRequestPath));
+            string absoluteSettingsPrefabRequestPath = Path.GetFullPath(
+                Path.Combine(Application.dataPath, "..", SandboxSettingsPrefabRequestPath));
+            if (!File.Exists(absoluteRequestPath) && !File.Exists(absolutePrefabRequestPath) &&
+                !File.Exists(absoluteSettingsPrefabRequestPath))
             {
                 return;
             }
 
             // Consume before acting, so a failed build never loops every editor frame.
-            File.Delete(absoluteRequestPath);
+            bool convertPrefabs = File.Exists(absolutePrefabRequestPath);
+            bool useSettingsPrefab = File.Exists(absoluteSettingsPrefabRequestPath);
+            string requestPath = useSettingsPrefab
+                ? absoluteSettingsPrefabRequestPath
+                : convertPrefabs ? absolutePrefabRequestPath : absoluteRequestPath;
+            File.Delete(requestPath);
             EditorApplication.update -= ConsumeAutomationRequest;
+
+            if (useSettingsPrefab)
+            {
+                RoadSandboxSettingsPrefabTool.ReplaceSandboxSettingsScreen();
+                return;
+            }
+
+            if (convertPrefabs)
+            {
+                RoadUiPrefabConverter.ConvertUiToPrefabs();
+                return;
+            }
 
             bool built = BuildPrototypeSceneNoDialogs();
             bool valid = built && ValidatePrototypeSceneNoDialogs();
@@ -262,6 +373,7 @@ namespace RoadOfLife.Editor
                 driving.Stats[2],
                 driving.Stats[3],
                 driving.ChoiceResult,
+                driving.ChoiceResultHeader,
                 driving.ControlsHint,
                 driving.ContinueButton,
                 upgrades.Header,
@@ -543,6 +655,7 @@ namespace RoadOfLife.Editor
                 RightGroup = right.Group,
                 Swipe = swipe,
                 Stats = stats,
+                ChoiceResultHeader = resultHeader,
                 ChoiceResult = choiceResult,
                 ControlsHint = controlsHint,
                 ContinueButton = continueButton,
@@ -1346,6 +1459,7 @@ namespace RoadOfLife.Editor
             public CardSwipeView Swipe;
             public BipolarStatView[] Stats;
             public TMP_Text ChoiceResult;
+            public TMP_Text ChoiceResultHeader;
             public TMP_Text ControlsHint;
             public Button ContinueButton;
         }

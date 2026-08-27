@@ -9,11 +9,11 @@ namespace RoadOfLife.Tests
     public sealed class CoreRoadGameTests
     {
         [Test]
-        public void CurrentCardData_ParsesAllTwentyCards()
+        public void CurrentCardData_ParsesAllFortyCards()
         {
             var database = LoadCurrentDatabase();
 
-            Assert.That(database.Cards, Has.Count.EqualTo(20));
+            Assert.That(database.Cards, Has.Count.EqualTo(40));
             Assert.That(database.Cards.Select(card => card.Id), Is.Unique);
         }
 
@@ -27,7 +27,7 @@ namespace RoadOfLife.Tests
             {
                 var deck = database.BuildDeck(requests, new SystemRandomSource(seed));
 
-                Assert.That(deck, Has.Count.EqualTo(RoadGameSession.TotalChoices), $"seed {seed}");
+                Assert.That(deck.Count, Is.EqualTo(RoadGameSession.TotalChoices), $"seed {seed}");
                 Assert.That(deck.Select(card => card.Id), Is.Unique, $"seed {seed}");
                 for (var i = 0; i < deck.Count; i++)
                 {
@@ -36,6 +36,28 @@ namespace RoadOfLife.Tests
                         Is.True,
                         $"seed {seed}, slot {i}, card {deck[i].Id}");
                 }
+            }
+        }
+
+        [Test]
+        public void CurrentCardData_AllChoicesChangeAtLeastTwoStats_AndOfferDifferentConsequences()
+        {
+            var database = LoadCurrentDatabase();
+
+            foreach (var card in database.Cards)
+            {
+                Assert.That(
+                    CountChangedStats(card.LeftChoice.Delta),
+                    Is.GreaterThanOrEqualTo(2),
+                    $"card {card.Id}, left choice");
+                Assert.That(
+                    CountChangedStats(card.RightChoice.Delta),
+                    Is.GreaterThanOrEqualTo(2),
+                    $"card {card.Id}, right choice");
+                Assert.That(
+                    card.LeftChoice.Delta,
+                    Is.Not.EqualTo(card.RightChoice.Delta),
+                    $"card {card.Id} offers identical consequences");
             }
         }
 
@@ -101,6 +123,51 @@ namespace RoadOfLife.Tests
                 Throws.InvalidOperationException);
         }
 
+        [Test]
+        public void Session_CompletesAllThreeTrips_AndWinsOnTheEighteenthChoice()
+        {
+            var database = new RoadCardDatabase(CreateControlledSessionCards());
+            var session = new RoadGameSession(database, new SystemRandomSource(11));
+            session.Start();
+
+            ChoiceResolution finalResolution = null;
+            for (var trip = 1; trip <= RoadGameSession.TotalTrips; trip++)
+            {
+                for (var choice = 0; choice < RoadGameSession.CardsPerTrip; choice++)
+                    finalResolution = session.Choose(choice % 2 == 0 ? ChoiceSide.Left : ChoiceSide.Right);
+
+                if (trip < RoadGameSession.TotalTrips)
+                {
+                    Assert.That(session.Stage, Is.EqualTo(RoadSessionStage.ChoosingUpgrade));
+                    session.ChooseUpgrade(trip == 1 ? RoadUpgrade.RoadMarkers : RoadUpgrade.WarmingPoint);
+                }
+            }
+
+            Assert.That(session.Stage, Is.EqualTo(RoadSessionStage.Won));
+            Assert.That(session.CompletedChoices, Is.EqualTo(RoadGameSession.TotalChoices));
+            Assert.That(session.CompletedTrips, Is.EqualTo(RoadGameSession.TotalTrips));
+            Assert.That(session.UsedCardIds, Has.Count.EqualTo(RoadGameSession.TotalChoices));
+            Assert.That(finalResolution, Is.Not.Null);
+            Assert.That(finalResolution.SessionWon, Is.True);
+            Assert.That(finalResolution.TripCompleted, Is.True);
+            Assert.That(finalResolution.Failure, Is.EqualTo(FailureReason.None));
+        }
+
+        [Test]
+        public void Session_EntersLostState_AndRejectsFurtherChoicesAfterFailure()
+        {
+            var database = new RoadCardDatabase(CreateFatalSessionCards());
+            var session = new RoadGameSession(database, new SystemRandomSource(3));
+            session.Start();
+
+            var resolution = session.Choose(ChoiceSide.Left);
+
+            Assert.That(session.Stage, Is.EqualTo(RoadSessionStage.Lost));
+            Assert.That(session.FailureReason, Is.EqualTo(FailureReason.TempoLow));
+            Assert.That(resolution.Failure, Is.EqualTo(FailureReason.TempoLow));
+            Assert.That(() => session.Choose(ChoiceSide.Right), Throws.InvalidOperationException);
+        }
+
         private static RoadCardDatabase LoadCurrentDatabase()
         {
             var path = Path.Combine(Application.dataPath, "Game", "Data", "Cards.tsv.txt");
@@ -146,6 +213,23 @@ namespace RoadOfLife.Tests
             }
         }
 
+        private static IEnumerable<RoadCard> CreateFatalSessionCards()
+        {
+            foreach (var card in CreateControlledSessionCards())
+            {
+                var fatal = new StatDelta(-50, 0, 0, 0);
+                yield return new RoadCard(
+                    card.Id,
+                    card.Phase,
+                    Enumerable.Range(1, RoadGameSession.TotalTrips).Where(card.IsAvailableOnTrip),
+                    card.Tag,
+                    card.Weight,
+                    card.EventText,
+                    new CardChoice(card.LeftChoice.Text, card.LeftChoice.ResultText, fatal),
+                    new CardChoice(card.RightChoice.Text, card.RightChoice.ResultText, fatal));
+            }
+        }
+
         private static void CompleteTrip(RoadGameSession session)
         {
             for (var i = 0; i < RoadGameSession.CardsPerTrip; i++)
@@ -160,5 +244,8 @@ namespace RoadOfLife.Tests
             RoadStat.Load => new StatDelta(0, 0, 0, amount),
             _ => default,
         };
+
+        private static int CountChangedStats(StatDelta delta) =>
+            new[] { delta.Tempo, delta.Engine, delta.Visibility, delta.Load }.Count(value => value != 0);
     }
 }

@@ -45,6 +45,7 @@ namespace RoadOfLife
         [SerializeField] private BipolarStatView loadView;
 
         [Header("Choice result and controls")]
+        [SerializeField] private TMP_Text choiceResultHeaderLabel;
         [SerializeField] private TMP_Text choiceResultLabel;
         [SerializeField] private TMP_Text controlsHintLabel;
         [SerializeField] private Button continueButton;
@@ -142,6 +143,7 @@ namespace RoadOfLife
             BipolarStatView visibility,
             BipolarStatView load,
             TMP_Text choiceResult,
+            TMP_Text choiceResultHeader,
             TMP_Text controlsHint,
             Button continueAction,
             TMP_Text upgradeHeader,
@@ -180,6 +182,7 @@ namespace RoadOfLife
             visibilityView = visibility;
             loadView = load;
             choiceResultLabel = choiceResult;
+            choiceResultHeaderLabel = choiceResultHeader;
             controlsHintLabel = controlsHint;
             continueButton = continueAction;
             upgradeHeaderLabel = upgradeHeader;
@@ -236,6 +239,19 @@ namespace RoadOfLife
             }
 
             SetText(choiceResultLabel, ComposeResult(resultText, appliedDelta));
+            SetText(choiceResultHeaderLabel, "ПОСЛЕДСТВИЯ");
+            SetPanelActive(choiceResultPanel, true);
+        }
+
+        public void ShowSessionIntroduction(string text)
+        {
+            if (cardSwipeView != null)
+            {
+                cardSwipeView.SetInteractable(false);
+            }
+
+            SetText(choiceResultLabel, text);
+            SetText(choiceResultHeaderLabel, "ВСТУПЛЕНИЕ");
             SetPanelActive(choiceResultPanel, true);
         }
 
