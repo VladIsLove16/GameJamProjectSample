@@ -127,7 +127,8 @@ namespace JamStarter
             }
 
             runtimeActions = Instantiate(sourceAsset);
-            runtimeActions.name = $"{sourceAsset.name} (Runtime {GetInstanceID()})";
+            // Fixed: Using this.GetEntityId() for Unity 6.5 compatibility
+            runtimeActions.name = $"{sourceAsset.name} (Runtime {this.GetEntityId()})";
 
             gameplayMap = FindRequiredMap(runtimeActions, GameplayMapName);
             uiMap = FindRequiredMap(runtimeActions, UiMapName);

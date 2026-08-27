@@ -1,0 +1,17 @@
+﻿<Solution>
+  <Project Path="Zenject.csproj" />
+  <Project Path="Zenject-ReflectionBaking-Editor.csproj" />
+  <Project Path="RoadOfLife.Runtime.csproj" />
+  <Project Path="JamStarter.Runtime.csproj" />
+  <Project Path="Extenject-Async.csproj" />
+  <Project Path="Zenject-PoolMonitor-Editor.csproj" />
+  <Project Path="Zenject-TestFramework.csproj" />
+  <Project Path="Zenject-Editor.csproj" />
+  <Project Path="JamStarter.Tests.PlayMode.csproj" />
+  <Project Path="JamStarter.Editor.csproj" />
+  <Project Path="JamStarter.Tests.EditMode.csproj" />
+  <Project Path="Assembly-CSharp-firstpass.csproj" />
+  <Project Path="Assembly-CSharp-Editor-firstpass.csproj" />
+  <Project Path="RoadOfLife.Editor.csproj" />
+  <Project Path="RoadOfLife.Tests.EditMode.csproj" />
+</Solution>
