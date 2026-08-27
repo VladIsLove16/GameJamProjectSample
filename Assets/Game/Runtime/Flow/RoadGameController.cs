@@ -14,6 +14,8 @@ namespace RoadOfLife
     [DisallowMultipleComponent]
     public sealed class RoadGameController : MonoBehaviour
     {
+        private static bool tutorialShownThisLaunch;
+
         [Header("Scene references")]
         [SerializeField] private TextAsset cardsSource;
         [SerializeField] private RoadGameView gameView;
@@ -42,6 +44,12 @@ namespace RoadOfLife
         };
 
         public RoadGameSession Session => session;
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetTutorialLaunchState()
+        {
+            tutorialShownThisLaunch = false;
+        }
 
         /// <summary>Assigns scene-owned references. Intended for the editor scene builder.</summary>
         public void Configure(
@@ -125,9 +133,10 @@ namespace RoadOfLife
             bool forceTutorialOnce = firstLaunchTutorial != null &&
                                      SettingsService.ConsumeTutorialOnNextPlayRequest();
             bool showFirstLaunchTutorial = firstLaunchTutorial != null &&
-                                           (!settings.Current.IntroSeen || forceTutorialOnce);
+                                           (!tutorialShownThisLaunch || forceTutorialOnce);
             if (showFirstLaunchTutorial)
             {
+                tutorialShownThisLaunch = true;
                 firstLaunchTutorial.Completed += OnFirstLaunchTutorialCompleted;
                 gameView.SetInteractionEnabled(false);
                 input.UseUI();

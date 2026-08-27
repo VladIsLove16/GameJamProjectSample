@@ -1,5 +1,6 @@
 using System;
 using UnityEngine;
+using UnityEngine.InputSystem.UI;
 using UnityEngine.SceneManagement;
 using Zenject;
 
@@ -26,6 +27,7 @@ namespace JamStarter
         public override void InstallBindings()
         {
             ValidateReferences();
+            EnsureUiInputModuleConfigured();
             SignalBusInstaller.Install(Container);
             AppSignalInstaller.Install(Container);
 
@@ -36,6 +38,21 @@ namespace JamStarter
             Container.BindInstance(settings);
             Container.BindInstance(new AppStartupSettings(firstScene));
             Container.BindInterfacesTo<AppStartup>().AsSingle();
+        }
+
+        private void EnsureUiInputModuleConfigured()
+        {
+            InputSystemUIInputModule uiInput = GetComponentInChildren<InputSystemUIInputModule>(true);
+            if (uiInput == null)
+            {
+                throw new InvalidOperationException(
+                    $"{nameof(AppBootstrap)} requires an {nameof(InputSystemUIInputModule)} in ProjectContext.");
+            }
+
+            if (uiInput.actionsAsset == null)
+            {
+                uiInput.AssignDefaultActions();
+            }
         }
 
         private void ValidateReferences()
