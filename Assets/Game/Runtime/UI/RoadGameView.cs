@@ -1,10 +1,12 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using JamStarter;
 using TMPro;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
+using Zenject;
 
 namespace RoadOfLife
 {
@@ -31,8 +33,12 @@ namespace RoadOfLife
         [SerializeField] private CanvasGroup leftChoiceGroup;
         [SerializeField] private CanvasGroup rightChoiceGroup;
         [SerializeField] private CardSwipeView cardSwipeView;
+        [SerializeField] private RoadCardPresentationView cardPresentationView;
+        [SerializeField] private RoadVehicleView vehicleView;
+        [SerializeField] private RoadAudioView audioView;
 
         [Header("Stats")]
+        [SerializeField] private bool showExactStats = true;
         [SerializeField] private BipolarStatView tempoView;
         [SerializeField] private BipolarStatView engineView;
         [SerializeField] private BipolarStatView visibilityView;
@@ -71,6 +77,7 @@ namespace RoadOfLife
         private string rightPreviewContent = string.Empty;
         private bool buttonsBound;
         private bool swipeBound;
+        private SettingsService settingsService;
 
         public event Action RestartRequested;
         public event Action MenuRequested;
@@ -81,11 +88,34 @@ namespace RoadOfLife
 
         public CardSwipeView SwipeView => cardSwipeView;
 
+        public void ConfigurePresentation(
+            RoadCardPresentationView cardPresentation,
+            RoadVehicleView vehicle,
+            RoadAudioView audio)
+        {
+            cardPresentationView = cardPresentation;
+            vehicleView = vehicle;
+            audioView = audio;
+        }
+
         private void Awake()
         {
             BindButtons();
             BindSwipe();
             SetControlsHint("Мышь/сенсор: потяните карточку  •  Клавиатура/геймпад: ← → и подтвердить");
+        }
+
+        [Inject]
+        private void Construct(SettingsService settings)
+        {
+            settingsService = settings;
+            SetExactStatsVisible(settings.Current.ShowExactStats);
+            settingsService.Changed += OnSettingsChanged;
+        }
+
+        private void OnSettingsChanged(GameSettingsSnapshot settings)
+        {
+            SetExactStatsVisible(settings.ShowExactStats);
         }
 
         /// <summary>
@@ -177,13 +207,16 @@ namespace RoadOfLife
             string leftChoiceText,
             string rightChoiceText,
             string leftPreviewText,
-            string rightPreviewText)
+            string rightPreviewText,
+            RoadCard card)
         {
             ShowDriving();
             SetPanelActive(choiceResultPanel, false);
             SetText(eventLabel, eventText);
             SetText(leftChoiceLabel, leftChoiceText);
             SetText(rightChoiceLabel, rightChoiceText);
+            cardPresentationView?.Show(card);
+            vehicleView?.PlayEventAnimation();
             leftPreviewContent = leftPreviewText ?? string.Empty;
             rightPreviewContent = rightPreviewText ?? string.Empty;
             RefreshChoicePreview(ChoiceSide.None);
@@ -221,10 +254,21 @@ namespace RoadOfLife
 
         public void SetStats(StatSnapshot stats, bool animate = true)
         {
+            SetExactStatsVisible(showExactStats);
             tempoView?.SetValue(stats.Tempo, animate);
             engineView?.SetValue(stats.Engine, animate);
             visibilityView?.SetValue(stats.Visibility, animate);
             loadView?.SetValue(stats.Load, animate);
+            vehicleView?.SetStats(stats);
+        }
+
+        public void SetExactStatsVisible(bool visible)
+        {
+            showExactStats = visible;
+            tempoView?.SetExactValueVisible(visible);
+            engineView?.SetExactValueVisible(visible);
+            visibilityView?.SetExactValueVisible(visible);
+            loadView?.SetExactValueVisible(visible);
         }
 
         public void ShowDriving()
@@ -433,6 +477,7 @@ namespace RoadOfLife
 
         private void OnChoiceCommitted(ChoiceSide side)
         {
+            audioView?.PlayCardChoice();
             ChoiceCommitted?.Invoke(side);
         }
 
@@ -472,6 +517,7 @@ namespace RoadOfLife
 
         private void OnContinueClicked()
         {
+            audioView?.PlayConsequence();
             ContinueRequested?.Invoke();
         }
 
@@ -616,6 +662,10 @@ namespace RoadOfLife
 
         private void OnDestroy()
         {
+            if (settingsService != null)
+            {
+                settingsService.Changed -= OnSettingsChanged;
+            }
             UnbindButtons();
             UnbindSwipe();
         }

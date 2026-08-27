@@ -22,6 +22,7 @@ namespace RoadOfLife
         [SerializeField] private Graphic highDangerGraphic;
 
         [Header("Presentation")]
+        [SerializeField] private bool showExactValue = true;
         [SerializeField, Range(1, 49)] private int dangerEdge = 15;
         [SerializeField, Min(0.01f)] private float changeDuration = 0.28f;
         [SerializeField] private Color normalColor = new Color(0.82f, 0.87f, 0.82f, 1f);
@@ -33,6 +34,15 @@ namespace RoadOfLife
         private int targetValue = 50;
 
         public int Value => targetValue;
+
+        public void SetExactValueVisible(bool visible)
+        {
+            showExactValue = visible;
+            if (valueLabel != null)
+            {
+                valueLabel.gameObject.SetActive(visible);
+            }
+        }
 
         private void Awake()
         {
@@ -124,6 +134,7 @@ namespace RoadOfLife
             if (valueLabel != null)
             {
                 valueLabel.text = Mathf.RoundToInt(clamped).ToString();
+                valueLabel.gameObject.SetActive(showExactValue);
             }
 
             if (fillImage != null)

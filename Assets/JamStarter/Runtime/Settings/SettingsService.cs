@@ -28,6 +28,7 @@ namespace JamStarter
         private SignalBus signalBus;
 
         public bool IsInitialized { get; private set; }
+        public event Action<GameSettingsSnapshot> Changed;
         public GameSettingsSnapshot Current => new(current ?? defaults);
         public string[] QualityNames => QualitySettings.names;
 
@@ -77,6 +78,18 @@ namespace JamStarter
 #if !UNITY_WEBGL
             Screen.fullScreen = value;
 #endif
+            PublishChanged();
+        }
+
+        public void SetShowExactStats(bool value)
+        {
+            EnsureInitialized();
+            if (current.showExactStats == value)
+            {
+                return;
+            }
+
+            current.showExactStats = value;
             PublishChanged();
         }
 
@@ -178,7 +191,9 @@ namespace JamStarter
 
         private void PublishChanged()
         {
-            signalBus?.Fire(new SettingsChangedSignal(Current));
+            GameSettingsSnapshot snapshot = Current;
+            signalBus?.Fire(new SettingsChangedSignal(snapshot));
+            Changed?.Invoke(snapshot);
         }
 
         private void ApplyMixerVolume(string parameter, float linearVolume)

@@ -546,7 +546,7 @@ RectTransform:
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 0, y: 0}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 26, y: 36}
+  m_SizeDelta: {x: 22, y: 26}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &126793501
 CanvasRenderer:
@@ -917,7 +917,7 @@ RectTransform:
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 0, y: 0}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 26, y: 36}
+  m_SizeDelta: {x: 22, y: 26}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &166655291
 CanvasRenderer:
@@ -1930,7 +1930,7 @@ MonoBehaviour:
   m_MinWidth: -1
   m_MinHeight: -1
   m_PreferredWidth: 300
-  m_PreferredHeight: 48
+  m_PreferredHeight: 32
   m_FlexibleWidth: -1
   m_FlexibleHeight: -1
   m_LayoutPriority: 1
@@ -3123,7 +3123,7 @@ MonoBehaviour:
   m_MinWidth: -1
   m_MinHeight: -1
   m_PreferredWidth: 300
-  m_PreferredHeight: 48
+  m_PreferredHeight: 32
   m_FlexibleWidth: -1
   m_FlexibleHeight: -1
   m_LayoutPriority: 1
@@ -4020,7 +4020,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: START SANDBOX
+  m_text: НАЧАТЬ РЕЙС
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -4135,7 +4135,7 @@ RectTransform:
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 0, y: 0}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 26, y: 36}
+  m_SizeDelta: {x: 22, y: 26}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &1273530140
 CanvasRenderer:
@@ -4752,7 +4752,7 @@ RectTransform:
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 0, y: 0}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 26, y: 36}
+  m_SizeDelta: {x: 22, y: 26}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &1436117781
 CanvasRenderer:
@@ -5030,7 +5030,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: JAM STARTER
+  m_text: ДОРОГА ЖИЗНИ
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -6129,7 +6129,7 @@ GameObject:
   - component: {fileID: 1752779690}
   - component: {fileID: 1752779692}
   m_Layer: 5
-  m_Name: START SANDBOX
+  m_Name: НАЧАТЬ РЕЙС
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -6641,7 +6641,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: A neutral Unity 6 foundation for rapid prototypes
+  m_text: Зимняя дорога через Ладогу
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -6828,7 +6828,7 @@ MonoBehaviour:
   m_MinWidth: -1
   m_MinHeight: -1
   m_PreferredWidth: 300
-  m_PreferredHeight: 48
+  m_PreferredHeight: 32
   m_FlexibleWidth: -1
   m_FlexibleHeight: -1
   m_LayoutPriority: 1
@@ -7745,7 +7745,7 @@ MonoBehaviour:
   m_MinWidth: -1
   m_MinHeight: -1
   m_PreferredWidth: 300
-  m_PreferredHeight: 48
+  m_PreferredHeight: 32
   m_FlexibleWidth: -1
   m_FlexibleHeight: -1
   m_LayoutPriority: 1

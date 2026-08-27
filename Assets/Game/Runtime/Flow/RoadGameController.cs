@@ -156,7 +156,8 @@ namespace RoadOfLife
                 card.LeftChoice.Text,
                 card.RightChoice.Text,
                 FormatDelta(card.LeftChoice.Delta),
-                FormatDelta(card.RightChoice.Delta));
+                FormatDelta(card.RightChoice.Delta),
+                card);
         }
 
         private void OnMoveChanged(Vector2 move)

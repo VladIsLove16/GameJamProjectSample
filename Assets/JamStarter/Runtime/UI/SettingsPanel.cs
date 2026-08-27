@@ -14,6 +14,7 @@ namespace JamStarter
         [SerializeField] private Slider sfxVolume;
         [SerializeField] private Slider uiVolume;
         [SerializeField] private Toggle fullscreen;
+        [SerializeField] private Toggle showExactStats;
         [SerializeField] private TMP_Dropdown quality;
 
         private SettingsService settings;
@@ -70,6 +71,7 @@ namespace JamStarter
             sfxVolume.onValueChanged.AddListener(OnSfxVolumeChanged);
             uiVolume.onValueChanged.AddListener(OnUiVolumeChanged);
             fullscreen.onValueChanged.AddListener(OnFullscreenChanged);
+            showExactStats?.onValueChanged.AddListener(OnShowExactStatsChanged);
             quality.onValueChanged.AddListener(OnQualityChanged);
             listenersBound = true;
         }
@@ -96,6 +98,7 @@ namespace JamStarter
             sfxVolume.SetValueWithoutNotify(snapshot.SfxVolume);
             uiVolume.SetValueWithoutNotify(snapshot.UiVolume);
             fullscreen.SetIsOnWithoutNotify(snapshot.Fullscreen);
+            showExactStats?.SetIsOnWithoutNotify(snapshot.ShowExactStats);
             quality.SetValueWithoutNotify(snapshot.QualityLevel);
             quality.RefreshShownValue();
             suppressCallbacks = false;
@@ -129,6 +132,11 @@ namespace JamStarter
         private void OnFullscreenChanged(bool value)
         {
             if (!suppressCallbacks) settings?.SetFullscreen(value);
+        }
+
+        private void OnShowExactStatsChanged(bool value)
+        {
+            if (!suppressCallbacks) settings?.SetShowExactStats(value);
         }
 
         private void OnQualityChanged(int value)

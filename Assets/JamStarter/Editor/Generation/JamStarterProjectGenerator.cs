@@ -79,6 +79,25 @@ namespace JamStarter.Editor
             Generate();
         }
 
+        [MenuItem("Tools/Road of Life/Refresh Main Menu Settings", priority = 103)]
+        public static void RefreshMainMenuSettings()
+        {
+            if (EditorApplication.isPlayingOrWillChangePlaymode)
+            {
+                Debug.LogWarning("Cannot refresh MainMenu while entering or running Play Mode.");
+                return;
+            }
+
+            if (!EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo())
+            {
+                return;
+            }
+
+            CreateMainMenuScene();
+            EditorSceneManager.OpenScene(JamStarterPaths.MainMenuScene, OpenSceneMode.Single);
+            Debug.Log("Road of Life main menu settings were refreshed.");
+        }
+
         public static void Generate()
         {
             EnsureFolders();
@@ -539,16 +558,16 @@ namespace JamStarter.Editor
 
             UIScreen mainScreen = CreateScreen("Main Screen", safeArea, out GameObject mainRoot);
             GameObject panel = CreatePanel(mainRoot.transform, new Vector2(620f, 720f));
-            CreateText(panel.transform, "JAM STARTER", 66f, FontStyles.Bold, TextPrimary, 110f);
+            CreateText(panel.transform, "ДОРОГА ЖИЗНИ", 66f, FontStyles.Bold, TextPrimary, 110f);
             CreateText(
                 panel.transform,
-                "A neutral Unity 6 foundation for rapid prototypes",
+                "Зимняя дорога через Ладогу",
                 24f,
                 FontStyles.Normal,
                 TextSecondary,
                 80f);
 
-            Button start = CreateButton(panel.transform, "START SANDBOX", Accent);
+            Button start = CreateButton(panel.transform, "НАЧАТЬ РЕЙС", Accent);
             Button settingsButton = CreateButton(panel.transform, "SETTINGS", AccentBlue);
             Button quit = CreateButton(panel.transform, "QUIT", PanelLight);
             UnityEventTools.AddPersistentListener(start.onClick, controller.StartGame);
@@ -700,6 +719,7 @@ namespace JamStarter.Editor
             Slider sfx = CreateSliderRow(panel.transform, "SFX");
             Slider ui = CreateSliderRow(panel.transform, "UI");
             Toggle fullscreen = CreateToggleRow(panel.transform, "Fullscreen");
+            Toggle showExactStats = CreateToggleRow(panel.transform, "Показывать цифры характеристик");
             TMP_Dropdown quality = CreateDropdownRow(panel.transform, "Quality");
             Button reset = CreateButton(panel.transform, "RESET DEFAULTS", PanelLight);
             Button back = CreateButton(panel.transform, "BACK", AccentBlue);
@@ -710,6 +730,7 @@ namespace JamStarter.Editor
             SetObject(settingsPanel, "sfxVolume", sfx);
             SetObject(settingsPanel, "uiVolume", ui);
             SetObject(settingsPanel, "fullscreen", fullscreen);
+            SetObject(settingsPanel, "showExactStats", showExactStats);
             SetObject(settingsPanel, "quality", quality);
             ConfigureScreen(screen, root.GetComponent<CanvasGroup>(), back);
 
@@ -899,7 +920,7 @@ namespace JamStarter.Editor
                 typeof(Slider),
                 typeof(LayoutElement));
             sliderObject.GetComponent<LayoutElement>().preferredWidth = 300f;
-            sliderObject.GetComponent<LayoutElement>().preferredHeight = 48f;
+            sliderObject.GetComponent<LayoutElement>().preferredHeight = 32f;
 
             GameObject background = CreateUiObject("Background", sliderObject.transform, typeof(Image));
             RectTransform backgroundRect = background.GetComponent<RectTransform>();
@@ -918,7 +939,7 @@ namespace JamStarter.Editor
             Stretch(handleArea.GetComponent<RectTransform>(), 12f, 0f);
             GameObject handle = CreateUiObject("Handle", handleArea.transform, typeof(Image));
             RectTransform handleRect = handle.GetComponent<RectTransform>();
-            handleRect.sizeDelta = new Vector2(26f, 36f);
+            handleRect.sizeDelta = new Vector2(22f, 26f);
             handle.GetComponent<Image>().color = TextPrimary;
 
             Slider slider = sliderObject.GetComponent<Slider>();
