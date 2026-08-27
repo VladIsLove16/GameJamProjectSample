@@ -43,7 +43,17 @@ namespace JamStarter
         private void Awake()
         {
             BindButtons();
-            Hide();
+            isOpen = false;
+        }
+
+        private void Start()
+        {
+            // An inactive tutorial receives Awake only when Show activates it.
+            // Hiding it from Awake would immediately cancel that first Show call.
+            if (!isOpen)
+            {
+                Hide();
+            }
         }
 
         private void BindButtons()

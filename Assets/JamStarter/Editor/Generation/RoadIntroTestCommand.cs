@@ -8,9 +8,8 @@ namespace JamStarter.Editor
         [MenuItem("Tools/Road of Life/Show Tutorial On Next Play", false, 106)]
         private static void ShowTutorialOnNextPlay()
         {
-            PlayerPrefs.SetInt(MainMenuController.ShowIntroNextLaunchKey, 1);
-            PlayerPrefs.Save();
-            Debug.Log("Tutorial will be shown on the next play launch only.");
+            SettingsService.RequestTutorialOnNextPlay();
+            Debug.Log("Tutorial will be shown once on the next entry into the game scene.");
         }
     }
 }

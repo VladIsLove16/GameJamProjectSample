@@ -15,6 +15,7 @@ namespace JamStarter
         [SerializeField] private Slider uiVolume;
         [SerializeField] private Toggle fullscreen;
         [SerializeField] private Toggle showExactStats;
+        [SerializeField] private Toggle showChoiceHints;
         [SerializeField] private TMP_Dropdown quality;
 
         private SettingsService settings;
@@ -72,6 +73,7 @@ namespace JamStarter
             uiVolume.onValueChanged.AddListener(OnUiVolumeChanged);
             fullscreen.onValueChanged.AddListener(OnFullscreenChanged);
             showExactStats?.onValueChanged.AddListener(OnShowExactStatsChanged);
+            showChoiceHints?.onValueChanged.AddListener(OnShowChoiceHintsChanged);
             quality.onValueChanged.AddListener(OnQualityChanged);
             listenersBound = true;
         }
@@ -99,6 +101,7 @@ namespace JamStarter
             uiVolume.SetValueWithoutNotify(snapshot.UiVolume);
             fullscreen.SetIsOnWithoutNotify(snapshot.Fullscreen);
             showExactStats?.SetIsOnWithoutNotify(snapshot.ShowExactStats);
+            showChoiceHints?.SetIsOnWithoutNotify(snapshot.ShowChoiceHints);
             quality.SetValueWithoutNotify(snapshot.QualityLevel);
             quality.RefreshShownValue();
             suppressCallbacks = false;
@@ -137,6 +140,11 @@ namespace JamStarter
         private void OnShowExactStatsChanged(bool value)
         {
             if (!suppressCallbacks) settings?.SetShowExactStats(value);
+        }
+
+        private void OnShowChoiceHintsChanged(bool value)
+        {
+            if (!suppressCallbacks) settings?.SetShowChoiceHints(value);
         }
 
         private void OnQualityChanged(int value)

@@ -19,7 +19,7 @@ namespace RoadOfLife.Editor
     public static class RoadGameSceneBuilder
     {
         private const string MenuRoot = "Tools/Road of Life";
-        private const string SandboxScenePath = "Assets/JamStarter/Scenes/Sandbox.unity";
+        private const string SandboxScenePath = "Assets/Scenes/Sandbox.unity";
         private const string CardsAssetPath = "Assets/Game/Data/Cards.tsv.txt";
         private const string UiRootName = "RoadGame UI";
         public const string AutomationRequestPath = "Temp/RoadOfLife.BuildPrototypeScene.request";

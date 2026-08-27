@@ -122,7 +122,11 @@ namespace RoadOfLife
                 "Мышь / сенсор: потяните карточку   •   Клавиатура / геймпад: ← → и подтвердить");
             gameView.SetStats(session.Stats.Snapshot, false);
             PresentCurrentCard();
-            if (firstLaunchTutorial != null && !settings.Current.IntroSeen)
+            bool forceTutorialOnce = firstLaunchTutorial != null &&
+                                     SettingsService.ConsumeTutorialOnNextPlayRequest();
+            bool showFirstLaunchTutorial = firstLaunchTutorial != null &&
+                                           (!settings.Current.IntroSeen || forceTutorialOnce);
+            if (showFirstLaunchTutorial)
             {
                 firstLaunchTutorial.Completed += OnFirstLaunchTutorialCompleted;
                 gameView.SetInteractionEnabled(false);

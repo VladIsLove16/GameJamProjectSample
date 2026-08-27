@@ -78,6 +78,7 @@ namespace RoadOfLife
         private string rightPreviewContent = string.Empty;
         private bool buttonsBound;
         private bool swipeBound;
+        private bool showChoiceHints = true;
         private SettingsService settingsService;
 
         public event Action RestartRequested;
@@ -111,12 +112,14 @@ namespace RoadOfLife
         {
             settingsService = settings;
             SetExactStatsVisible(settings.Current.ShowExactStats);
+            SetChoiceHintsVisible(settings.Current.ShowChoiceHints);
             settingsService.Changed += OnSettingsChanged;
         }
 
         private void OnSettingsChanged(GameSettingsSnapshot settings)
         {
             SetExactStatsVisible(settings.ShowExactStats);
+            SetChoiceHintsVisible(settings.ShowChoiceHints);
         }
 
         /// <summary>
@@ -238,7 +241,9 @@ namespace RoadOfLife
                 cardSwipeView.SetInteractable(false);
             }
 
-            SetText(choiceResultLabel, ComposeResult(resultText, appliedDelta));
+            SetText(choiceResultLabel, showExactStats
+                ? ComposeResult(resultText, appliedDelta)
+                : resultText);
             SetText(choiceResultHeaderLabel, "ПОСЛЕДСТВИЯ");
             SetPanelActive(choiceResultPanel, true);
         }
@@ -285,6 +290,12 @@ namespace RoadOfLife
             engineView?.SetExactValueVisible(visible);
             visibilityView?.SetExactValueVisible(visible);
             loadView?.SetExactValueVisible(visible);
+        }
+
+        public void SetChoiceHintsVisible(bool visible)
+        {
+            showChoiceHints = visible;
+            RefreshChoicePreview(cardSwipeView != null ? cardSwipeView.CurrentPreview : ChoiceSide.None);
         }
 
         public void ShowDriving()
@@ -521,13 +532,13 @@ namespace RoadOfLife
             if (leftPreviewLabel != null)
             {
                 leftPreviewLabel.text = leftPreviewContent;
-                leftPreviewLabel.gameObject.SetActive(leftSelected && !string.IsNullOrWhiteSpace(leftPreviewContent));
+                leftPreviewLabel.gameObject.SetActive(showChoiceHints && leftSelected && !string.IsNullOrWhiteSpace(leftPreviewContent));
             }
 
             if (rightPreviewLabel != null)
             {
                 rightPreviewLabel.text = rightPreviewContent;
-                rightPreviewLabel.gameObject.SetActive(rightSelected && !string.IsNullOrWhiteSpace(rightPreviewContent));
+                rightPreviewLabel.gameObject.SetActive(showChoiceHints && rightSelected && !string.IsNullOrWhiteSpace(rightPreviewContent));
             }
         }
 

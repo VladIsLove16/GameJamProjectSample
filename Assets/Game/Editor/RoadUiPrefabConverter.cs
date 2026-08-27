@@ -13,8 +13,8 @@ namespace RoadOfLife.Editor
     public static class RoadUiPrefabConverter
     {
         private const string PrefabRoot = "Assets/Prefabs/UI/Road Of Life";
-        private const string MainMenuPath = "Assets/JamStarter/Scenes/MainMenu.unity";
-        private const string SandboxPath = "Assets/JamStarter/Scenes/Sandbox.unity";
+        private const string MainMenuPath = "Assets/Scenes/MainMenu.unity";
+        private const string SandboxPath = "Assets/Scenes/Sandbox.unity";
 
         [MenuItem("Tools/Road of Life/Convert UI To Prefabs", false, 104)]
         public static void ConvertUiToPrefabs()

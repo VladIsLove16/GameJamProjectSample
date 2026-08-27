@@ -9,7 +9,7 @@ namespace RoadOfLife.Editor
 {
     public static class RoadSandboxSettingsPrefabTool
     {
-        private const string ScenePath = "Assets/JamStarter/Scenes/Sandbox.unity";
+        private const string ScenePath = "Assets/Scenes/Sandbox.unity";
         private const string PrefabPath = "Assets/Prefabs/UI/Settings Screen.prefab";
         private const string SettingsName = "Sandbox Settings Screen";
 

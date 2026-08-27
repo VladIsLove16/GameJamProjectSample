@@ -10,6 +10,7 @@ namespace JamStarter
     {
         public const int CurrentSchemaVersion = 2;
         public const string PlayerPrefsKey = "JamStarter.Settings.v1";
+        public const string ShowTutorialNextPlayKey = "RoadOfLife.ShowIntroNextLaunch";
 
         private const float MutedDecibels = -80f;
 
@@ -93,6 +94,18 @@ namespace JamStarter
             PublishChanged();
         }
 
+        public void SetShowChoiceHints(bool value)
+        {
+            EnsureInitialized();
+            if (current.showChoiceHints == value)
+            {
+                return;
+            }
+
+            current.showChoiceHints = value;
+            PublishChanged();
+        }
+
         public void MarkIntroSeen()
         {
             EnsureInitialized();
@@ -104,6 +117,24 @@ namespace JamStarter
             current.introSeen = true;
             Save();
             PublishChanged();
+        }
+
+        public static void RequestTutorialOnNextPlay()
+        {
+            PlayerPrefs.SetInt(ShowTutorialNextPlayKey, 1);
+            PlayerPrefs.Save();
+        }
+
+        public static bool ConsumeTutorialOnNextPlayRequest()
+        {
+            if (PlayerPrefs.GetInt(ShowTutorialNextPlayKey, 0) != 1)
+            {
+                return false;
+            }
+
+            PlayerPrefs.DeleteKey(ShowTutorialNextPlayKey);
+            PlayerPrefs.Save();
+            return true;
         }
 
         public void SetQualityLevel(int value)

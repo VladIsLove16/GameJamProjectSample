@@ -6,15 +6,10 @@ namespace JamStarter
     [DisallowMultipleComponent]
     public sealed class MainMenuController : MonoBehaviour
     {
-        public const string ShowIntroNextLaunchKey = "RoadOfLife.ShowIntroNextLaunch";
         [SerializeField] private UIScreen mainScreen;
         [SerializeField] private UIScreen settingsScreen;
         [SerializeField] private SettingsPanel settingsPanel;
         [SerializeField] private IntroSequenceView introSequence;
-    #if UNITY_EDITOR
-        [Header("Editor testing")]
-        [SerializeField] private bool alwaysShowIntroInEditor;
-    #endif
 
         private InputReader input;
         private GamePauseService pause;
@@ -28,22 +23,6 @@ namespace JamStarter
             if (introSequence != null)
             {
                 introSequence.Completed += OnIntroCompleted;
-                bool showIntro = !settings.Current.IntroSeen;
-                if (PlayerPrefs.GetInt(ShowIntroNextLaunchKey, 0) == 1)
-                {
-                    PlayerPrefs.DeleteKey(ShowIntroNextLaunchKey);
-                    PlayerPrefs.Save();
-                    showIntro = true;
-                }
-
-                if (showIntro
-#if UNITY_EDITOR
-                          || alwaysShowIntroInEditor
-#endif
-                         )
-                {
-                    OpenIntro();
-                }
             }
         }
 
@@ -64,7 +43,6 @@ namespace JamStarter
 
         public void StartGame()
         {
-            settings?.MarkIntroSeen();
             scenes?.LoadScene(SceneNames.Sandbox);
         }
 

@@ -16,9 +16,9 @@ namespace JamStarter.Editor
     public static class JamStarterPaths
     {
         public const string Root = "Assets/JamStarter";
-        public const string BootstrapScene = Root + "/Scenes/Bootstrap.unity";
-        public const string MainMenuScene = Root + "/Scenes/MainMenu.unity";
-        public const string SandboxScene = Root + "/Scenes/Sandbox.unity";
+        public const string BootstrapScene = "Assets/Scenes/Bootstrap.unity";
+        public const string MainMenuScene = "Assets/Scenes/MainMenu.unity";
+        public const string SandboxScene = "Assets/Scenes/Sandbox.unity";
         public const string ProjectContextPrefab = Root + "/Resources/ProjectContext.prefab";
 
         public static readonly string[] BuildScenes =

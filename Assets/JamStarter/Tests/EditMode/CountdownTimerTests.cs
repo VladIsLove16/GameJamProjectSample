@@ -1,5 +1,6 @@
 using System;
 using NUnit.Framework;
+using UnityEngine;
 
 namespace JamStarter.Tests
 {
@@ -55,6 +56,26 @@ namespace JamStarter.Tests
         {
             var timer = new CountdownTimer();
             Assert.Throws<ArgumentOutOfRangeException>(() => timer.Start(value));
+        }
+    }
+
+    public sealed class TutorialLaunchRequestTests
+    {
+        [SetUp]
+        [TearDown]
+        public void ClearRequest()
+        {
+            PlayerPrefs.DeleteKey(SettingsService.ShowTutorialNextPlayKey);
+            PlayerPrefs.Save();
+        }
+
+        [Test]
+        public void RequestedTutorial_IsConsumedExactlyOnce()
+        {
+            SettingsService.RequestTutorialOnNextPlay();
+
+            Assert.That(SettingsService.ConsumeTutorialOnNextPlayRequest(), Is.True);
+            Assert.That(SettingsService.ConsumeTutorialOnNextPlayRequest(), Is.False);
         }
     }
 }
