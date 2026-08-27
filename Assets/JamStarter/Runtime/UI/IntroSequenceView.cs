@@ -43,7 +43,6 @@ namespace JamStarter
         private void Awake()
         {
             BindButtons();
-            isOpen = false;
         }
 
         private void Start()
