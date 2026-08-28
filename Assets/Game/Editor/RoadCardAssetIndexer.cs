@@ -12,10 +12,23 @@ namespace RoadOfLife.Editor
         private const string CardsPath = "Assets/Game/Data/Cards.tsv.txt";
         private const string LibraryPath = "Assets/Game/Data/RoadCardPresentationLibrary.asset";
         private const string SearchRoot = "Assets/Game/Art/Cards";
+        private const string ImportedGameAssetRoot = "Assets/Sprites/Game";
 
         private static readonly string[] ImageExtensions = { ".png", ".jpg", ".jpeg", ".psd", ".tga", ".tif", ".tiff" };
         private static readonly string[] AudioExtensions = { ".wav", ".mp3", ".ogg", ".aiff", ".aif" };
         private static readonly string[] IdSuffixes = { "_image", "_sprite", "_card", "_event", "_model", "_prefab", "_sound", "_sfx", "_audio" };
+
+        private static readonly Dictionary<string, string> ImportedAssetIds = new(StringComparer.OrdinalIgnoreCase)
+        {
+            { NormalizeId("1 - потерян путь"), "road_snow_markers" },
+            { NormalizeId("2 - двигатель теряет тягу"), "engine_power_loss" },
+            { NormalizeId("3 ляденой гребень"), "ice_ridge" },
+            { NormalizeId("4 отражение снега"), "headlight_whiteout" },
+            { NormalizeId("5 - трещина"), "fresh_ice_crack" },
+            { NormalizeId("6 - воздушная тревога"), "air_alarm" },
+            { NormalizeId("7 - подъезжаем к лагерю"), "warming_point" },
+            { NormalizeId("8 - посветите пж (("), "road_crew_lighting" },
+        };
 
         [MenuItem("Tools/Road of Life/Index Card Assets", false, 102)]
         public static void IndexCardAssets()
@@ -124,55 +137,115 @@ namespace RoadOfLife.Editor
         private static Dictionary<string, AssetMatch> FindMatches()
         {
             var result = new Dictionary<string, AssetMatch>(StringComparer.OrdinalIgnoreCase);
-            if (!AssetDatabase.IsValidFolder(SearchRoot))
+            foreach (string root in GetSearchRoots())
             {
-                return result;
-            }
-
-            foreach (string guid in AssetDatabase.FindAssets("", new[] { SearchRoot }))
-            {
-                string path = AssetDatabase.GUIDToAssetPath(guid);
-                string extension = Path.GetExtension(path).ToLowerInvariant();
-                string key = NormalizeId(Path.GetFileNameWithoutExtension(path));
-                if (string.IsNullOrEmpty(key))
+                foreach (string guid in AssetDatabase.FindAssets("", new[] { root }))
                 {
-                    continue;
-                }
-
-                if (!result.TryGetValue(key, out AssetMatch match))
-                {
-                    match = new AssetMatch();
-                    result[key] = match;
-                }
-
-                if (ImageExtensions.Contains(extension))
-                {
-                    TextureImporter importer = AssetImporter.GetAtPath(path) as TextureImporter;
-                    if (importer != null && importer.textureType != TextureImporterType.Sprite)
+                    string path = AssetDatabase.GUIDToAssetPath(guid);
+                    string extension = Path.GetExtension(path).ToLowerInvariant();
+                    string key = GetAssetKey(path);
+                    if (string.IsNullOrEmpty(key))
                     {
-                        importer.textureType = TextureImporterType.Sprite;
-                        importer.spriteImportMode = SpriteImportMode.Single;
-                        importer.SaveAndReimport();
+                        continue;
                     }
 
-                    match.Sprite = AssetDatabase.LoadAssetAtPath<Sprite>(path);
-                }
-                else if (AudioExtensions.Contains(extension))
-                {
-                    match.Sound = AssetDatabase.LoadAssetAtPath<AudioClip>(path);
-                }
-                else if (extension == ".prefab")
-                {
-                    match.Prefab = AssetDatabase.LoadAssetAtPath<GameObject>(path);
+                    if (!result.TryGetValue(key, out AssetMatch match))
+                    {
+                        match = new AssetMatch();
+                        result[key] = match;
+                    }
+
+                    if (ImageExtensions.Contains(extension))
+                    {
+                        TextureImporter importer = AssetImporter.GetAtPath(path) as TextureImporter;
+                        if (importer != null && importer.textureType != TextureImporterType.Sprite)
+                        {
+                            importer.textureType = TextureImporterType.Sprite;
+                            importer.spriteImportMode = SpriteImportMode.Single;
+                            importer.mipmapEnabled = false;
+                            importer.SaveAndReimport();
+                        }
+
+                        match.Sprite = AssetDatabase.LoadAssetAtPath<Sprite>(path);
+                    }
+                    else if (AudioExtensions.Contains(extension))
+                    {
+                        match.Sound = AssetDatabase.LoadAssetAtPath<AudioClip>(path);
+                    }
+                    else if (extension == ".prefab")
+                    {
+                        match.Prefab = AssetDatabase.LoadAssetAtPath<GameObject>(path);
+                    }
                 }
             }
 
+            ApplyTagFallbacks(result);
             return result;
+        }
+
+        private static IEnumerable<string> GetSearchRoots()
+        {
+            if (AssetDatabase.IsValidFolder(SearchRoot))
+            {
+                yield return SearchRoot;
+            }
+
+            if (AssetDatabase.IsValidFolder(ImportedGameAssetRoot))
+            {
+                yield return ImportedGameAssetRoot;
+            }
+        }
+
+        private static string GetAssetKey(string path)
+        {
+            string key = NormalizeId(Path.GetFileNameWithoutExtension(path));
+            if (path.StartsWith(ImportedGameAssetRoot + "/", StringComparison.OrdinalIgnoreCase) &&
+                ImportedAssetIds.TryGetValue(key, out string mappedId))
+            {
+                return NormalizeId(mappedId);
+            }
+
+            return key;
+        }
+
+        private static void ApplyTagFallbacks(Dictionary<string, AssetMatch> result)
+        {
+            CopyFallback(result, "road_snow_markers", "deep_snow", "torn_tarpaulin", "passenger_cold", "snow_on_body", "false_track_in_snow");
+            CopyFallback(result, "engine_power_loss", "radiator_cover_loose", "wiper_linkage_broken", "tow_stuck_truck", "frostbitten_passenger", "medical_help", "warming_post_fuel");
+            CopyFallback(result, "ice_ridge", "ice_survey_pause", "snowed_shore_ramp", "loose_passenger_bench");
+            CopyFallback(result, "headlight_whiteout", "windshield_ice", "shifted_route_sign", "hooded_signal_lamp", "loose_blackout_covers", "light_leak_in_body");
+            CopyFallback(result, "fresh_ice_crack", "road_repair_timber");
+            CopyFallback(result, "air_alarm");
+            CopyFallback(result, "warming_point", "snowed_shore_ramp");
+            CopyFallback(result, "road_crew_lighting");
+        }
+
+        private static void CopyFallback(Dictionary<string, AssetMatch> result, string sourceId, params string[] targetIds)
+        {
+            if (!result.TryGetValue(NormalizeId(sourceId), out AssetMatch source))
+            {
+                return;
+            }
+
+            foreach (string targetId in targetIds)
+            {
+                string key = NormalizeId(targetId);
+                if (!result.TryGetValue(key, out AssetMatch target))
+                {
+                    target = new AssetMatch();
+                    result[key] = target;
+                }
+
+                target.Sprite ??= source.Sprite;
+                target.Prefab ??= source.Prefab;
+                target.Sound ??= source.Sound;
+            }
         }
 
         private static bool IsCardAssetPath(string path)
         {
-            return path.StartsWith(SearchRoot + "/", StringComparison.OrdinalIgnoreCase);
+            return path.StartsWith(SearchRoot + "/", StringComparison.OrdinalIgnoreCase) ||
+                path.StartsWith(ImportedGameAssetRoot + "/", StringComparison.OrdinalIgnoreCase);
         }
 
         private static string NormalizeId(string value)

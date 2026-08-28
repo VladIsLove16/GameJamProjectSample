@@ -36,6 +36,25 @@ namespace RoadOfLife
         [SerializeField] private RoadCardPresentationView cardPresentationView;
         [SerializeField] private RoadVehicleView vehicleView;
         [SerializeField] private RoadAudioView audioView;
+        [SerializeField] private RoadAudioLibrary audioLibrary;
+        [SerializeField] private Sprite defaultCardSprite;
+        [SerializeField] private Sprite snowCardSprite;
+        [SerializeField] private Sprite engineCardSprite;
+        [SerializeField] private Sprite iceCardSprite;
+        [SerializeField] private Sprite visibilityCardSprite;
+        [SerializeField] private Sprite crackCardSprite;
+        [SerializeField] private Sprite alarmCardSprite;
+        [SerializeField] private Sprite campCardSprite;
+        [SerializeField] private Sprite lightingCardSprite;
+
+        [Header("Audio fallback")]
+        [SerializeField] private AudioClip cardChoiceSound;
+        [SerializeField] private AudioClip consequenceSound;
+        [SerializeField] private AudioClip upgradeSound;
+        [SerializeField] private AudioClip failureSound;
+        [SerializeField] private AudioClip victorySound;
+        [SerializeField] private AudioClip startEngineSound;
+        [SerializeField] private AudioClip drivingMusic;
 
         [Header("Stats")]
         [SerializeField] private bool showExactStats = true;
@@ -80,6 +99,11 @@ namespace RoadOfLife
         private bool swipeBound;
         private bool showChoiceHints = true;
         private SettingsService settingsService;
+        private AudioService audioService;
+        private Image fallbackCardImage;
+        private bool fallbackAudioStarted;
+        private AudioSource localSfxSource;
+        private AudioSource localMusicSource;
 
         public event Action RestartRequested;
         public event Action MenuRequested;
@@ -104,16 +128,30 @@ namespace RoadOfLife
         {
             BindButtons();
             BindSwipe();
+            fallbackCardImage = cardSwipeView != null ? cardSwipeView.GetComponent<Image>() : null;
             SetControlsHint("Мышь/сенсор: потяните карточку  •  Клавиатура/геймпад: ← → и подтвердить");
         }
 
         [Inject]
-        private void Construct(SettingsService settings)
+        private void Construct(SettingsService settings, AudioService audio)
         {
             settingsService = settings;
+            audioService = audio;
             SetExactStatsVisible(settings.Current.ShowExactStats);
             SetChoiceHintsVisible(settings.Current.ShowChoiceHints);
             settingsService.Changed += OnSettingsChanged;
+        }
+
+        private void Start()
+        {
+            if (fallbackAudioStarted || audioView != null)
+            {
+                return;
+            }
+
+            fallbackAudioStarted = true;
+            PlaySfxClip(GetStartEngineSound());
+            PlayMusicClip(GetDrivingMusic());
         }
 
         private void OnSettingsChanged(GameSettingsSnapshot settings)
@@ -221,7 +259,14 @@ namespace RoadOfLife
             SetText(eventLabel, eventText);
             SetText(leftChoiceLabel, leftChoiceText);
             SetText(rightChoiceLabel, rightChoiceText);
-            cardPresentationView?.Show(card);
+            if (cardPresentationView != null)
+            {
+                cardPresentationView.Show(card);
+            }
+            else
+            {
+                ShowFallbackCardPresentation(card);
+            }
             vehicleView?.PlayEventAnimation();
             leftPreviewContent = leftPreviewText ?? string.Empty;
             rightPreviewContent = rightPreviewText ?? string.Empty;
@@ -338,6 +383,7 @@ namespace RoadOfLife
 
         public void ShowVictory(string bodyText = null, string journalText = null)
         {
+            PlayVictory();
             ShowEnding(
                 "Дорога пройдена",
                 ComposeEndingBody(
@@ -349,6 +395,7 @@ namespace RoadOfLife
 
         public void ShowDefeat(string bodyText, string journalText = null)
         {
+            PlayFailure();
             ShowEnding(
                 "Рейс не завершён",
                 ComposeEndingBody(
@@ -504,7 +551,7 @@ namespace RoadOfLife
 
         private void OnChoiceCommitted(ChoiceSide side)
         {
-            audioView?.PlayCardChoice();
+            PlayCardChoice();
             ChoiceCommitted?.Invoke(side);
         }
 
@@ -544,7 +591,7 @@ namespace RoadOfLife
 
         private void OnContinueClicked()
         {
-            audioView?.PlayConsequence();
+            PlayConsequence();
             ContinueRequested?.Invoke();
         }
 
@@ -587,8 +634,155 @@ namespace RoadOfLife
             }
 
             button.interactable = false;
+            PlayUpgrade();
             UpgradeSelected?.Invoke(GetUpgradeAt(index));
         }
+
+        private void ShowFallbackCardPresentation(RoadCard card)
+        {
+            if (fallbackCardImage == null)
+            {
+                return;
+            }
+
+            if (defaultCardSprite != null)
+            {
+                fallbackCardImage.sprite = defaultCardSprite;
+                fallbackCardImage.preserveAspect = true;
+                fallbackCardImage.color = Color.white;
+            }
+        }
+
+        private Sprite GetFallbackCardSprite(RoadCard card)
+        {
+            if (card == null)
+            {
+                return defaultCardSprite;
+            }
+
+            switch (card.Id)
+            {
+                case "fresh_ice_crack":
+                case "road_repair_timber":
+                    return crackCardSprite != null ? crackCardSprite : iceCardSprite;
+                case "air_alarm":
+                    return alarmCardSprite;
+                case "warming_point":
+                    return campCardSprite != null ? campCardSprite : engineCardSprite;
+                case "road_crew_lighting":
+                    return lightingCardSprite != null ? lightingCardSprite : visibilityCardSprite;
+            }
+
+            return card.Tag switch
+            {
+                CardTag.Engine => engineCardSprite,
+                CardTag.Ice => iceCardSprite,
+                CardTag.Visibility => visibilityCardSprite,
+                CardTag.Alarm => alarmCardSprite,
+                CardTag.Snow => snowCardSprite,
+                _ => defaultCardSprite,
+            };
+        }
+
+        private void PlayCardChoice()
+        {
+            if (audioView != null) audioView.PlayCardChoice();
+            else PlaySfxClip(GetCardChoiceSound());
+        }
+
+        private void PlayConsequence()
+        {
+            if (audioView != null) audioView.PlayConsequence();
+            else PlaySfxClip(GetConsequenceSound());
+        }
+
+        private void PlayUpgrade()
+        {
+            if (audioView != null) audioView.PlayUpgrade();
+            else PlaySfxClip(GetUpgradeSound());
+        }
+
+        private void PlayFailure()
+        {
+            if (audioView != null) audioView.PlayFailure();
+            else PlaySfxClip(GetFailureSound());
+        }
+
+        private void PlayVictory()
+        {
+            if (audioView != null) audioView.PlayVictory();
+            else PlaySfxClip(GetVictorySound());
+        }
+
+        private void PlaySfxClip(AudioClip clip)
+        {
+            if (clip == null)
+            {
+                return;
+            }
+
+            EnsureLocalAudioSources();
+            float volume = audioLibrary != null ? audioLibrary.SfxVolume : 1f;
+            localSfxSource.PlayOneShot(clip, volume);
+            audioService?.PlaySfx(clip, volume);
+        }
+
+        private void PlayMusicClip(AudioClip clip)
+        {
+            if (clip == null)
+            {
+                return;
+            }
+
+            EnsureLocalAudioSources();
+            localMusicSource.clip = clip;
+            localMusicSource.loop = true;
+            localMusicSource.volume = audioLibrary != null ? audioLibrary.MusicVolume : 0.45f;
+            localMusicSource.spatialBlend = 0f;
+            localMusicSource.Play();
+            audioService?.PlayMusic(clip, true, 0.2f);
+        }
+
+        private void EnsureLocalAudioSources()
+        {
+            if (localSfxSource == null)
+            {
+                localSfxSource = gameObject.AddComponent<AudioSource>();
+                localSfxSource.playOnAwake = false;
+                localSfxSource.loop = false;
+                localSfxSource.spatialBlend = 0f;
+                localSfxSource.volume = 1f;
+            }
+
+            if (localMusicSource == null)
+            {
+                localMusicSource = gameObject.AddComponent<AudioSource>();
+                localMusicSource.playOnAwake = false;
+                localMusicSource.loop = true;
+                localMusicSource.spatialBlend = 0f;
+            }
+        }
+
+        private AudioClip GetCardChoiceSound() =>
+            audioLibrary != null && audioLibrary.CardChoiceSound != null ? audioLibrary.CardChoiceSound : cardChoiceSound;
+
+        private AudioClip GetConsequenceSound() =>
+            audioLibrary != null && audioLibrary.ConsequenceSound != null ? audioLibrary.ConsequenceSound : consequenceSound;
+
+        private AudioClip GetUpgradeSound() =>
+            audioLibrary != null && audioLibrary.UpgradeSound != null ? audioLibrary.UpgradeSound : upgradeSound;
+
+        private AudioClip GetFailureSound() =>
+            audioLibrary != null && audioLibrary.FailureSound != null ? audioLibrary.FailureSound : failureSound;
+
+        private AudioClip GetVictorySound() =>
+            audioLibrary != null && audioLibrary.VictorySound != null ? audioLibrary.VictorySound : victorySound;
+
+        private AudioClip GetStartEngineSound() =>
+            audioLibrary != null && audioLibrary.StartEngineSound != null ? audioLibrary.StartEngineSound : startEngineSound;
+
+        private AudioClip GetDrivingMusic() =>
+            audioLibrary != null && audioLibrary.DrivingMusic != null ? audioLibrary.DrivingMusic : drivingMusic;
 
         private int GetUpgradeOptionCount()
         {

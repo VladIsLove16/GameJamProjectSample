@@ -1,0 +1,23 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5a6e8de642d24d14f9cf8ee2c82fd9bd, type: 3}
+  m_Name: RoadAudioLibrary
+  m_EditorClassIdentifier: 
+  cardChoiceSound: {fileID: 8300000, guid: 42e3c9838267aef44a2ebe7dbc235acf, type: 3}
+  consequenceSound: {fileID: 8300000, guid: 3ebe97f0899f2334eb8a083873dd02a7, type: 3}
+  upgradeSound: {fileID: 8300000, guid: 285daa38e9b268845b15c649a044669f, type: 3}
+  failureSound: {fileID: 8300000, guid: 3ebe97f0899f2334eb8a083873dd02a7, type: 3}
+  victorySound: {fileID: 8300000, guid: 944bb40e488a037469405f50e6769aca, type: 3}
+  startEngineSound: {fileID: 8300000, guid: 7aad2afbf4cfc7044a9275e026e1e675, type: 3}
+  drivingMusic: {fileID: 8300000, guid: 0c4d7effb07779b4496411b205d60fc9, type: 3}
+  sfxVolume: 1
+  musicVolume: 0.45
